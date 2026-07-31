@@ -1,0 +1,1616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#14110D" />
+<meta name="color-scheme" content="dark" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="The Index" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>The Index — a living catalog</title>
+<style>
+  :root{
+    --bg:#14110D; --bg2:#1A1611; --card:#211C15; --card2:#262017;
+    --line:#352D22; --line-soft:#2A241C;
+    --ink:#F0E8DA; --ink2:#AEA28C; --ink3:#766B57;
+    --amber:#E8A33D; --amber-soft:rgba(232,163,61,.12);
+    --sage:#86B06A; --rose:#CD7070; --gold:#F2C94C; --flag:#E0793C;
+    --br:#E8A33D; --exp:#37B7A6; --hear:#B884E6; --play:#86C96F; --watch:#EA6E62;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  .strip{-webkit-overflow-scrolling:touch}
+  button,.tile,.cchip,.chip{-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:
+    radial-gradient(1200px 600px at 100% -10%,rgba(232,163,61,.06),transparent 60%),
+    radial-gradient(1000px 700px at -10% 110%,rgba(55,183,166,.05),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{display:grid;grid-template-columns:264px minmax(0,1fr);min-height:100vh}
+  .scrim{display:none}
+  a{color:var(--amber);text-decoration:none} a:hover{text-decoration:underline}
+  ::selection{background:var(--amber-soft)}
+  button{font-family:inherit}
+
+  /* sidebar */
+  .side{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;
+    background:linear-gradient(180deg,#1B1611,#130F09);border-right:1px solid var(--line);padding:22px 14px 40px}
+  .brand{font-family:var(--serif);font-size:25px;letter-spacing:.3px;line-height:1.05}
+  .brand b{color:var(--amber);font-weight:600}
+  @supports ((-webkit-background-clip:text) or (background-clip:text)){
+    .brand b{background:linear-gradient(90deg,var(--amber),#f0c070);-webkit-background-clip:text;background-clip:text;color:transparent}}
+  .brand-sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);margin-top:7px}
+  .nav-label{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);margin:22px 6px 8px}
+  .nav-item{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;
+    background:none;border:none;color:var(--ink2);font:inherit;font-size:14px;text-align:left;
+    padding:8px 10px;border-radius:8px;cursor:pointer;border-left:3px solid transparent}
+  .nav-item:hover{background:var(--card);color:var(--ink)}
+  .nav-item.active{background:var(--card2);color:var(--ink)}
+  .nav-item .nd{width:8px;height:8px;border-radius:50%;background:var(--ink3);flex:0 0 auto;margin-right:2px}
+  .nav-item .lbl{flex:1;display:flex;align-items:center;gap:9px}
+  .nav-item .ct{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+  .nav-item.active .ct{color:var(--ink)}
+  .legend{margin-top:22px;border-top:1px solid var(--line-soft);padding-top:14px;display:flex;flex-direction:column;gap:7px}
+  .legend .row{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink2)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .dot.todo{background:var(--ink3)} .dot.done{background:var(--sage)} .dot.skip{background:var(--rose)}
+  .dot.priority{background:var(--gold)} .dot.warning{background:var(--flag)}
+  .side-actions{margin-top:20px;border-top:1px solid var(--line-soft);padding-top:14px;display:flex;flex-direction:column;gap:7px}
+  .sbtn{display:flex;align-items:center;gap:9px;background:none;border:1px solid var(--line);color:var(--ink2);
+    font-size:12.5px;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left}
+  .sbtn:hover{color:var(--ink);border-color:#473f2e;background:var(--card)}
+  .sbtn b{color:var(--amber);font-weight:700;font-family:var(--mono);width:12px;text-align:center}
+
+  /* main */
+  .main{padding:22px 30px 90px;max-width:1280px;min-width:0;width:100%}
+  .topbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+  h1.view-title{font-family:var(--serif);font-weight:600;font-size:30px;margin:0;letter-spacing:.2px}
+  .view-title .tick{display:inline-block;width:13px;height:13px;border-radius:4px;margin-right:10px;vertical-align:middle;background:var(--amber)}
+  .view-meta{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin-top:4px}
+  .search-wrap{position:relative;flex:1 1 240px;max-width:400px}
+  .search{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--ink);
+    font:inherit;font-size:14px;padding:11px 36px 11px 14px;border-radius:10px;outline:none}
+  .search:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft)}
+  .search::placeholder{color:var(--ink3)}
+  .kbd{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--ink3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;pointer-events:none}
+
+  /* quick add */
+  .quickadd{display:flex;gap:8px;align-items:center;margin:16px 0 0;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px}
+  .quickadd .plus{width:30px;height:30px;border-radius:8px;background:var(--amber);color:#1a140b;font-size:18px;font-weight:700;border:none;cursor:pointer;flex:0 0 auto}
+  .quickadd input{flex:1;background:none;border:none;color:var(--ink);font:inherit;font-size:14px;padding:6px;outline:none}
+  .quickadd input::placeholder{color:var(--ink3)}
+  .quickadd select{background:var(--card);border:1px solid var(--line);color:var(--ink2);font:inherit;font-size:12.5px;padding:7px 9px;border-radius:8px;outline:none}
+  .quickadd .more{background:var(--card);border:1px solid var(--line);color:var(--ink2);font-size:13px;padding:7px 11px;border-radius:8px;cursor:pointer}
+  .quickadd .more:hover{color:var(--ink)}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 0}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{background:var(--bg2);border:none;color:var(--ink2);font-size:12.5px;padding:7px 14px;cursor:pointer}
+  .seg button.on{background:var(--amber-soft);color:var(--amber)}
+  .grow{flex:1}
+
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 0}
+  .chip{background:var(--bg2);border:1px solid var(--line);color:var(--ink2);font:inherit;font-size:12.5px;padding:6px 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+  .chip:hover{color:var(--ink);border-color:#473f2e}
+  .chip.on{background:var(--amber-soft);border-color:var(--amber);color:var(--amber)}
+  .chip .dot{width:8px;height:8px}
+  .toggle{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2);cursor:pointer;user-select:none}
+  .toggle input{accent-color:var(--amber);width:15px;height:15px}
+
+  .facets{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 0}
+  .facets label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+  .facets select,.facets input{background:var(--bg2);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:12.5px;padding:7px 10px;border-radius:8px;outline:none}
+  .facets select:focus,.facets input:focus{border-color:var(--amber)}
+
+  .tagbar{margin:8px 0 0;min-height:0}
+  .activetag{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 8px 5px 12px}
+  .activetag b{color:var(--amber)} .activetag button{background:none;border:none;color:var(--ink2);cursor:pointer;font-size:14px;line-height:1}
+  .statbar{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-family:var(--mono);font-size:11.5px;color:var(--ink3);letter-spacing:.05em}
+  .statbar b{color:var(--ink);font-weight:600}
+
+  /* ---- tiles ---- */
+  .row-sec{margin-top:26px}
+  .row-head{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+  .row-head .rt{font-family:var(--serif);font-size:19px;color:var(--ink);position:relative;padding-left:14px}
+  .row-head .rt::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:4px;border-radius:3px;background:var(--c,var(--amber))}
+  .row-head .rc{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+  .strip{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x proximity;padding:4px 2px 12px;scrollbar-width:thin}
+  .strip::-webkit-scrollbar{height:8px}.strip::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(224px,1fr));gap:18px;margin-top:18px}
+
+  .tile{scroll-snap-align:start;flex:0 0 252px;width:252px;position:relative;height:308px;border-radius:14px;overflow:hidden;
+    border:1px solid rgba(255,255,255,.06);cursor:pointer;box-shadow:0 10px 24px -16px rgba(0,0,0,.9);
+    transition:transform .16s ease,box-shadow .16s ease;text-align:left}
+  .grid .tile{flex:none;width:auto}
+  .tile:hover{transform:translateY(-3px);box-shadow:0 16px 30px -16px rgba(0,0,0,.95)}
+  .cover-grad{position:absolute;inset:0}
+  .cover-art{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .cover-art .glyph{position:absolute;right:-14px;top:44%;transform:translateY(-50%) rotate(-11deg);
+    font-size:118px;line-height:1;opacity:.30;filter:saturate(.85)}
+  .cover-art .glyph2{position:absolute;left:-16px;top:12%;font-size:56px;line-height:1;opacity:.14;transform:rotate(13deg)}
+  .cover-art .wash{position:absolute;inset:0;opacity:.16;
+    background-image:radial-gradient(circle at 22% 26%,rgba(255,255,255,.6) 1px,transparent 1.6px);
+    background-size:19px 19px}
+  .tile::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(0,0,0,.10) 20%,rgba(0,0,0,.58) 54%,rgba(0,0,0,.88))}
+  .cover-cat{position:absolute;top:10px;left:11px;z-index:2;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#fff;opacity:.92}
+  .cover-dot{position:absolute;top:11px;right:11px;z-index:2;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 3px rgba(0,0,0,.25)}
+  .ebadge{position:absolute;top:9px;right:31px;z-index:3;display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:rgba(16,13,9,.8);color:#fff;font-family:var(--mono);font-size:11px;border:1px solid rgba(255,255,255,.18);margin-left:4px}
+  .ebadge.like{color:#ff9b9b;border-color:rgba(205,112,112,.6)} .ebadge.dis{color:var(--ink2)} .ebadge.wish{color:var(--gold);border-color:rgba(242,201,76,.6)}
+  .cover-info{position:absolute;left:12px;right:12px;bottom:11px;z-index:2;display:flex;flex-direction:column;gap:7px}
+  .cover-title{font-family:var(--serif);font-size:19px;line-height:1.14;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.65);
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:2.32em}
+  .cover-snip{font-size:12px;color:rgba(255,255,255,.82);line-height:1.34;text-shadow:0 1px 6px rgba(0,0,0,.75);
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:2.7em}
+  .cover-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:1px}
+  .cchip{font-family:var(--mono);font-size:9.5px;color:#fff;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.22);border-radius:6px;padding:3px 7px;cursor:pointer}
+  .cchip:hover{background:rgba(255,255,255,.28)}
+  .tile.skip{filter:grayscale(.55) brightness(.72)}
+  .scroll-more{display:flex;justify-content:center;padding:18px;color:var(--ink3);font-family:var(--mono);font-size:11px}
+
+  /* list */
+  .item{display:grid;grid-template-columns:26px 1fr auto;gap:12px;align-items:start;padding:11px 10px;border-radius:9px;border:1px solid transparent}
+  .item:hover{background:var(--card);border-color:var(--line-soft)}
+  .check{appearance:none;width:17px;height:17px;margin-top:3px;border:1.5px solid #4a4332;border-radius:5px;background:var(--bg2);cursor:pointer;position:relative;flex:0 0 auto}
+  .check:checked{background:var(--sage);border-color:var(--sage)}
+  .check:checked::after{content:"";position:absolute;left:5px;top:1.5px;width:4px;height:9px;border:solid #14110d;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .body .name{font-family:var(--serif);font-size:16px;color:var(--ink);line-height:1.3;cursor:pointer}
+  .item.done .name{color:var(--ink2);text-decoration:line-through;text-decoration-color:var(--ink3)}
+  .item.skip .name{color:var(--ink3);text-decoration:line-through;text-decoration-color:var(--rose)}
+  .note{font-size:13px;color:var(--ink2);margin-top:3px;line-height:1.45}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .rowtools a{font-size:11px;color:var(--ink3);border:1px solid transparent;border-radius:6px;padding:3px 7px}
+  .rowtools a:hover{color:var(--amber);border-color:var(--line)}
+  section.group{margin-top:22px}
+  .group-head{display:flex;align-items:baseline;gap:12px;cursor:pointer;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .group-head .gt{font-family:var(--serif);font-size:18px;color:var(--ink)}
+  .group-head .gc{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+  .group.collapsed .items{display:none}
+
+  .pill{font-family:var(--mono);font-size:10.5px;color:var(--ink2);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;display:inline-flex;align-items:center;gap:5px}
+  .pill.loc::before{content:"⌖";color:var(--exp)} .pill.date::before{content:"◷";color:var(--gold)}
+  .pill.dir::before{content:"🎬"} .pill.up{color:var(--gold);border-color:#4a4322;background:rgba(242,201,76,.08)}
+  .pill.sale{color:var(--sage);border-color:#39482f;background:rgba(134,176,106,.1)}
+  .pill.tag{cursor:pointer} .pill.tag:hover{border-color:var(--amber);color:var(--amber)}
+  .pill.flag{color:var(--flag);border-color:#4a3322;background:rgba(224,121,60,.08)}
+  .pill.star{color:var(--gold);border-color:#4a4322;background:rgba(242,201,76,.08)}
+
+  .empty{padding:60px 10px;text-align:center;color:var(--ink3)}
+  .empty b{display:block;font-family:var(--serif);font-size:20px;color:var(--ink2);margin-bottom:6px}
+  .footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line-soft);font-size:12px;color:var(--ink3);line-height:1.6}
+
+  /* detail + editor modals */
+  .modal{position:fixed;inset:0;background:rgba(6,4,2,.66);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);display:none;align-items:flex-start;justify-content:center;z-index:60;overflow:auto;padding:38px 16px}
+  .modal.open{display:flex}
+  .sheet{background:var(--bg2);border:1px solid var(--line);border-radius:16px;width:100%;max-width:520px;overflow:hidden}
+  .detail-cover{position:relative;height:140px;overflow:hidden}
+  .detail-cover .cover-art .glyph{font-size:104px;right:16px;opacity:.26}
+  .detail-cover::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.1),rgba(20,17,13,.9))}
+  .detail-cover .dc-cat{position:absolute;top:14px;left:18px;z-index:2;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#fff}
+  .detail-cover .dc-title{position:absolute;left:18px;right:18px;bottom:12px;z-index:2;font-family:var(--serif);font-size:25px;color:#fff;line-height:1.12;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+  .detail-body{padding:18px 20px 22px}
+  .detail-body .sub{font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.05em}
+  .detail-body .logline{font-size:14.5px;color:var(--ink);line-height:1.5;margin:12px 0;font-style:italic}
+  .detail-body .dnote{font-size:13.5px;color:var(--ink2);line-height:1.5;margin:10px 0}
+  .linkrow{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+  .linkbtn{background:var(--amber-soft);border:1px solid var(--amber);color:var(--amber);font-size:12.5px;padding:8px 13px;border-radius:8px;display:inline-flex;gap:6px;align-items:center}
+  .linkbtn.sec{background:var(--bg2);border-color:var(--line);color:var(--ink2)}
+  .linkbtn.sec:hover{color:var(--ink);text-decoration:none} .linkbtn:hover{text-decoration:none}
+  .detail-actions{display:flex;gap:8px;align-items:center;margin-top:18px;border-top:1px solid var(--line-soft);padding-top:16px}
+  .iconbtn{background:var(--bg2);border:1px solid var(--line);color:var(--ink2);font-size:12.5px;padding:8px 12px;border-radius:8px;cursor:pointer}
+  .iconbtn:hover{color:var(--ink);border-color:#473f2e}
+  .handle{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2);cursor:pointer}
+  .handle input{accent-color:var(--sage);width:16px;height:16px}
+  .engage{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+  .eg3{display:flex;gap:8px;flex-wrap:wrap}
+  .ebtn{background:var(--bg2);border:1px solid var(--line);color:var(--ink);font-size:13px;padding:9px 14px;border-radius:9px;cursor:pointer}
+  .ebtn:hover{border-color:#473f2e}
+  .ebtn.on{background:var(--amber-soft);border-color:var(--amber);color:var(--amber)}
+  .ebtn.like.on{background:rgba(205,112,112,.14);border-color:var(--rose);color:#ff9b9b}
+  .ebtn.dis.on{background:var(--card2);border-color:var(--ink2);color:var(--ink2)}
+  .scorebar{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  .scorebar .lbl2{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-right:4px}
+  .sc{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:var(--bg2);color:var(--ink2);font-size:12.5px;cursor:pointer}
+  .sc:hover{border-color:var(--gold);color:var(--ink)}
+  .sc.on{background:var(--gold);border-color:var(--gold);color:#14110d;font-weight:700}
+
+  .esheet{background:var(--bg2);border:1px solid var(--line);border-radius:14px;width:100%;max-width:520px;padding:22px}
+  .esheet h2{font-family:var(--serif);font-size:22px;margin:0 0 14px}
+  .field{margin-bottom:12px} .field label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px}
+  .field input,.field select,.field textarea{width:100%;background:var(--card);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:14px;padding:9px 11px;border-radius:8px;outline:none}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber)}
+  .field textarea{min-height:58px;resize:vertical}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .extra{display:none}
+  .esheet-actions{display:flex;gap:8px;margin-top:14px;align-items:center}
+  .tbtn{background:var(--bg2);border:1px solid var(--line);color:var(--ink);font-size:13px;padding:9px 15px;border-radius:8px;cursor:pointer}
+  .tbtn.primary{background:var(--amber);color:#14110d;border-color:var(--amber);font-weight:600}
+  .danger{color:var(--rose);border-color:#4a2c2c}
+
+  .warnbar{display:none;align-items:flex-start;gap:10px;background:rgba(224,121,60,.1);border:1px solid #4a3322;
+    color:var(--ink);border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:13px;line-height:1.45}
+  .warnbar.show{display:flex}
+  .warnbar b{color:var(--flag)}
+  .warnbar button{background:var(--flag);border:none;color:#1a140b;font-size:12.5px;font-weight:600;
+    padding:7px 12px;border-radius:7px;cursor:pointer;margin-left:auto;flex:0 0 auto}
+  .menu-btn{display:none}
+  @media (max-width:980px){
+    body{grid-template-columns:minmax(0,1fr)}
+    .side{position:fixed;top:0;left:0;z-index:70;width:min(84vw,300px);height:100vh;transform:translateX(-100%);transition:transform .2s ease}
+    .side.open{transform:translateX(0)}
+    .scrim.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:65}
+    .main{padding:12px 12px 90px}
+    .menu-btn{display:inline-flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:14px;padding:11px 14px;border-radius:9px;cursor:pointer;margin-bottom:12px}
+    .frow{grid-template-columns:1fr}
+    h1.view-title{font-size:24px}
+    .search-wrap{max-width:none;flex:1 1 100%}
+    .search{font-size:16px;padding:12px 36px 12px 14px}
+    .quickadd{flex-wrap:wrap}
+    .quickadd input{flex:1 1 100%;order:-1;font-size:16px;padding:9px 6px}
+    .quickadd select,.quickadd .more{font-size:13px;padding:9px 10px}
+    .chip{padding:8px 13px;font-size:13px}
+    .facets select,.facets input{font-size:16px;padding:9px 11px}
+    .field input,.field select,.field textarea{font-size:16px}
+    .modal{padding:0;align-items:flex-end}
+    .sheet,.esheet{max-width:none;border-radius:16px 16px 0 0;max-height:92vh;overflow:auto}
+    .esheet{padding:18px 16px 26px}
+    .ebtn,.tbtn,.iconbtn,.linkbtn{padding:11px 15px;font-size:14px}
+    .sc{width:34px;height:34px;font-size:13px}
+    .tile{flex-basis:170px;width:170px;height:224px}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+    .cover-title{font-size:16px}
+    .cover-snip{font-size:11.5px}
+    .strip{gap:11px}
+  }
+  @media (max-width:420px){
+    .tile{flex-basis:152px;width:152px;height:208px}
+    .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:980px){
+    @supports(padding:max(0px)){
+      .main{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));padding-bottom:max(90px,env(safe-area-inset-bottom))}
+    }
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<noscript>
+  <div style="max-width:640px;margin:40px auto;padding:22px;border:1px solid #4a3322;border-radius:12px;
+    background:rgba(224,121,60,.1);color:#F0E8DA;font:15px/1.6 system-ui,-apple-system,sans-serif">
+    <div style="font-size:19px;font-weight:600;color:#E0793C;margin-bottom:8px">JavaScript is turned off here</div>
+    <p style="margin:0 0 10px">This page is showing empty because the app builds its cards with JavaScript, and
+    this viewer isn't running it. The file itself is fine — all 521 entries are inside it.</p>
+    <p style="margin:0 0 10px"><b>On iPhone:</b> Settings → Apps → Safari → Advanced → make sure
+    <b>JavaScript</b> is on. If it's already on, you're viewing this in the Files
+    <i>preview</i>, which blocks scripts — try opening the file in Safari itself.</p>
+    <p style="margin:0"><b>Or use the reading copy:</b> <code>the-index-offline.html</code> needs no
+    JavaScript at all and works everywhere.</p>
+  </div>
+</noscript>
+  <aside class="side" id="side">
+    <div class="brand">The&nbsp;<b>Index</b></div>
+    <div class="brand-sub">A living catalog · batches 1 + 2</div>
+    <div class="nav-label">Catalog</div>
+    <div id="nav-cats"></div>
+    <div class="nav-label">Views</div>
+    <div id="nav-views"></div>
+    <div class="legend" id="legend"></div>
+    <div class="side-actions">
+      <button class="sbtn" id="exportBtn"><b>↧</b> Export (.json)</button>
+      <label class="sbtn" style="cursor:pointer"><b>↥</b> Import (.json)<input type="file" id="importFile" accept="application/json" hidden></label>
+      <button class="sbtn" id="resetBtn"><b>⟲</b> Reset to original</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main class="main">
+    <button class="menu-btn" id="menuBtn">☰ Catalog</button>
+    <div class="warnbar" id="warnbar">
+      <span><b>Heads up —</b> this browser isn’t saving changes for this file. Tap <b>Export now</b> to download a backup, then use <b>Import</b> next time to pick up where you left off.<span id="warnCount"></span></span>
+      <button id="warnExport">Export now</button>
+    </div>
+    <div class="topbar">
+      <div><h1 class="view-title" id="viewTitle">All entries</h1><div class="view-meta" id="viewMeta"></div></div>
+      <div class="search-wrap"><input class="search" id="search" type="search" placeholder="Search every entry…" autocomplete="off"/><span class="kbd">/</span></div>
+    </div>
+
+    <div class="quickadd" id="quickadd">
+      <button class="plus" id="qaAdd" title="Add">+</button>
+      <input id="qaName" placeholder="Quick add an entry…"/>
+      <select id="qaCat" title="Catalog"></select>
+      <button class="more" id="qaMore">More fields</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="seg" id="modeSeg">
+        <button data-mode="rows" class="on">▦ Streaming</button>
+        <button data-mode="grid">⊞ Grid</button>
+        <button data-mode="list">☰ List</button>
+      </div>
+    </div>
+
+    <div class="controls" id="statusChips"></div>
+    <div class="facets" id="facets" style="display:none"></div>
+    <div class="tagbar" id="tagbar"></div>
+    <div class="statbar" id="statbar"></div>
+    <div id="content"></div>
+
+    <div class="footer">
+      Tap a tile for the full card, links and grading. Mark things <b>Completed</b> / Watched / Played, rate films out of 10, and like or dislike music &amp; buys.
+      Edits save in this browser and <b>Export</b> gives you a backup — that file is also what you hand me to merge your phone notes.
+    </div>
+  </main>
+
+  <!-- detail modal -->
+  <div class="modal" id="detail"><div class="sheet" id="detailSheet"></div></div>
+
+  <!-- editor modal -->
+  <div class="modal" id="editor">
+    <div class="esheet">
+      <h2 id="edTitle">Add an entry</h2>
+      <input type="hidden" id="f-id">
+      <div class="field"><label>Name</label><input id="f-name" placeholder="What is it?"></div>
+      <div class="frow">
+        <div class="field"><label>Catalog</label><select id="f-cat">
+          <option value="BR">Buy / Research</option><option value="EXP">Experience</option>
+          <option value="HEAR">Hear</option><option value="PLAY">Play</option><option value="WATCH">Watch</option></select></div>
+        <div class="field"><label>Section</label><input id="f-sub" list="sublist" placeholder="e.g. Films"><datalist id="sublist"></datalist></div>
+      </div>
+      <div class="field"><label>Note</label><textarea id="f-note"></textarea></div>
+      <div class="frow">
+        <div class="field"><label>Link (optional)</label><input id="f-url" placeholder="https://… (blank = auto link)"></div>
+        <div class="field"><label>Location</label><input id="f-loc"></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>Date</label><input id="f-date" placeholder="e.g. Aug 10"></div>
+        <div class="field"><label>Status</label><select id="f-status">
+          <option value="todo">To-do</option><option value="priority">Priority</option><option value="warning">Heads-up</option><option value="skip">Skip</option></select></div>
+      </div>
+      <div class="field"><label>Tags (comma separated)</label><input id="f-tags"></div>
+      <div class="extra" id="ex-watch">
+        <div class="frow"><div class="field"><label>Director</label><input id="f-dir"></div>
+          <div class="field"><label>Genre</label><input id="f-genre" list="genrelist"><datalist id="genrelist"></datalist></div></div>
+      </div>
+      <div class="extra" id="ex-avail"><div class="field"><label>Availability</label><select id="f-avail">
+        <option value="">—</option><option>Released</option><option>Coming Soon</option><option>Available</option>
+        <option>In theaters</option><option>Streaming</option><option>Upcoming</option></select></div></div>
+      <div class="extra" id="ex-sale"><label class="toggle"><input type="checkbox" id="f-sale"> On sale right now</label></div>
+      <div class="esheet-actions">
+        <button class="tbtn primary" id="saveBtn">Save</button>
+        <button class="tbtn" id="cancelBtn">Cancel</button><span class="grow"></span>
+        <button class="tbtn danger" id="deleteBtn" style="display:none">Delete</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const DATA = `
+BR|Wear & Fragrance|Hammam Bouquet Unisex Cologne|Amber Saffron clone|https://dossier.co/products/ambery-saffron||||
+BR|Wear & Fragrance|BVLGARI — Man In Black|||||| 
+BR|Wear & Fragrance|Dior — Fahrenheit Le Parfum|||||| 
+BR|Wear & Fragrance|Abbot NYC — Sequoia|||||| 
+BR|Wear & Fragrance|Prada — Luna Rossa Black EDP|||||| 
+BR|Wear & Fragrance|Parfums de Marly — Carlisle|||||| 
+BR|Wear & Fragrance|YSL — Y EDP|||||| 
+BR|Wear & Fragrance|YSL Cologne|General note — pin down which one||||| 
+BR|Wear & Fragrance|Jimmy Choo Cologne|||||| 
+BR|Wear & Fragrance|Reyane Tradition — Insurrection|||||| 
+BR|Tools & Software|Resolume|Lighting / VDJ software||||| software,vj
+BR|Tools & Software|Vectorworks|Rigging / lighting design software||||| software,lighting
+BR|Tools & Software|CineTracer|Real-time cinematography / previz||||| software,film
+BR|Tools & Software|eycndy.co|Shot & VFX templates + inspiration|https://eycndy.co|||| vfx
+BR|Tools & Software|Soundresource.com|Audio / sound resource|https://soundresource.com|||| audio
+BR|Tools & Software|Rapid Flow — Sphere VST|Audio plugin|https://www.rapidflow.shop/products/sphere-v3|||| audio,vst
+BR|Tools & Software|Nightshade|AI image "poisoning" / copyright tool||||| software,ai
+BR|Tools & Software|Typeface Animator|Type animation tool||||| software,design
+BR|Tools & Software|Affinity|Design app suite||||| software,design
+BR|Tools & Software|Delphi.tools||https://delphi.tools|||| software
+BR|Tools & Software|Vvd.world|RPG / MMO map making & universe building|https://vvd.world|||| worldbuilding
+BR|Tools & Software|Google Labs|Experiments incl. Google Sheets add-ons||||| software
+BR|Tools & Software|123apps.com|Free online media utilities|https://123apps.com|||| utility
+BR|Tools & Software|The Cutting Room — "Shaping a Scene"|Film-editing training course||||| course,film
+BR|Tools & Software|Eat This Much|Automatic meal planner||||| app,food
+BR|Tools & Software|Oops|App to manage spending habits||||| app,finance
+BR|Tools & Software|Skiplagged.com|Cheaper "hidden city" flights|https://skiplagged.com|||| travel
+BR|Tools & Software|forgemytrip.com|Trip planning|https://forgemytrip.com|||| travel
+BR|Tools & Software|iOverlander|Camping / overlanding community & map||||| travel,community
+BR|Tools & Software|Lemon8 / Clapper|Social media platforms to look at||||| social
+BR|Tools & Software|Taplio.com|AI-generated LinkedIn posts|https://taplio.com|||| ai,career
+BR|Tools & Software|www.dupe.com|Duplicate / look-alike finder|https://www.dupe.com|||| utility
+BR|Tools & Software|hiddenhousing.org|Housing resource|https://hiddenhousing.org|||| housing
+BR|Tools & Software|foreclosures.com|Real-estate foreclosures|https://foreclosures.com|||| housing
+BR|Tools & Software|ifixit.com|Repair guides for anything|https://ifixit.com|||| utility
+BR|Tools & Software|Iluvincognito.com|Techno / underground raves|https://iluvincognito.com|||| nightlife,events
+BR|Tools & Software|Thenextfunthing|Events IG page — @thenextfunthing||||| events,contact
+BR|Gear & Objects|Tabs "Sex Chocolate"|Aphrodisiac chocolate (adult)||||| adult
+BR|Gear & Objects|Viture|AR glasses + mobile gaming dock||||| tech
+BR|Gear & Objects|Vestaboard|Split-flap message board||||| tech
+BR|Gear & Objects|Creality|3D printer||||| tech
+BR|Gear & Objects|Novel Book Wallets|Wallets shaped like books|||||
+BR|Gear & Objects|MyLittleRecord|Custom vinyl records||||| music
+BR|Gear & Objects|Car Safety Hammer|Emergency window breaker / seatbelt cutter|https://www.amazon.com/dp/B0B94PKX2T||||
+BR|Gear & Objects|Rock Wool Insulation|Soundproofing / insulation||||| audio
+BR|Gear & Objects|The Good Store|||||| 
+BR|Gear & Objects|Harmless Offering|Free MTG singles store||||| games,mtg
+BR|Gear & Objects|Surfas Culinary District|Restaurant-supply & culinary store (LA)||Culver City, LA||| food
+BR|Gear & Objects|Sphinx Stationery|D&D organizer / stationery||||| ttrpg
+BR|Wear & Fragrance|Menswear brands roundup|Uniqlo · Muji · COS · LA Apparel · Rue Porter||||| menswear
+BR|Wear & Fragrance|Omezdo|Menswear||||| menswear
+BR|Gear & Objects|Monarch Imperial Star Destroyer|Mould King set|https://mouldking.store/shop/mouldking-13135-monarch-imperial-star-destroyer/|||| lego
+BR|Gear & Objects|WandaVision Models (Hot Toys)|||||| 
+BR|Food & Drink|CSA / Veggie Share|Community-supported ag; farm-to-table services||||| food
+BR|Food & Drink|Re_ Grocery|Zero-waste grocery store|https://regrocery.co/|LA||| food
+BR|Food & Drink|WillyWackySnacks|Snack shop||||| food
+BR|Read & Learn|Baron by Joyce Lee|Art / photo book|https://www.baronbooks.co.uk/product-page/baron-by-joyce-lee|||| book
+BR|Read & Learn|Global Trends 2040: A More Contested World|ODNI foresight report|https://www.dni.gov/files/ODNI/documents/assessments/GlobalTrends_2040.pdf|||| report
+BR|Read & Learn|Global Trends 2030|Earlier ODNI report||||| report
+BR|Read & Learn|Vice — inside OUR (anti-trafficking)|Investigation of the OUR non-profit|https://www.vice.com/en/article/7kvana/inside-the-shadowy-antisex-trafficking-group-our|||| article
+BR|Read & Learn|Vox — "Jobless Employee" / bullshit jobs|On being employed with nothing to do|https://www.vox.com/money/23733244/bullshit-jobs-work-employment-lazy-jobless-employed-nothing-to-do|||| article
+BR|Read & Learn|EEO Laws — misclassification of employees|Reference on worker classification||||| legal,career
+BR|Read & Learn|French & Americans PDF|By @americanfille||||| contact
+BR|Read & Learn|"New Marketing Theory"|Old: Awareness → Interest → Desire → Action. New: Inspiration → Exploration → Community → Loyalty.||||| marketing
+BR|Read & Learn|LinkedIn "first to apply" hack|Set the Past-24hrs filter, find f_TPR=r86400 in the URL (86400 = 24h in seconds); change to 3600 (1h) or 600 (10min).||||| career,tip
+BR|Studios, Orgs & Causes|American Debt Payback Fund|||||| cause
+BR|Studios, Orgs & Causes|Open Path Collective|Affordable mental-health non-profit||||| cause,mentalhealth
+BR|Media & Streaming|BFlix|"Bootleg Netflix" — no subscription||||| streaming
+BR|Media & Streaming|Jellyfin vs Plex|Self-hosted media server comparison||||| streaming,selfhost
+BR|Media & Streaming|Streaming alternatives list|HBO→Moviebox · Apple TV→Streamly · Apple Music→Sound · Netflix→Flixio · Peacock→GlitchTV · Disney→Netmirror · Spotify→Lyra · Hulu→ShowZone · Prime Video→CineHub · YT Premium→Brave · Paramount+→EpicFlix||||| streaming
+BR|Money & Work|Bilt Rewards|Credit card that rewards rent|https://www.biltrewards.com/|||| finance
+BR|Money & Work|"FIRE" Financial Independence chart|Saved in downloads||||| finance
+BR|Money & Work|"Divers Insurance"|~$75 / year||||| finance,insurance
+BR|Money & Work|Tailor Brands|LLC / startup setup tools||||| business
+BR|Money & Work|Mentra.com|Neurodiversity job board|https://mentra.com|||| career
+BR|Money & Work|generalist.world/jobs|ORANGE / Trove — contact Helen Huang|https://generalist.world/jobs|||| career,contact
+BR|Money & Work|Sideshift|UGC content side-gigs||||| career
+BR|Studios, Orgs & Causes|ZheeShee|VFX production / gaming studio||||| studio,vfx
+BR|Studios, Orgs & Causes|Charred Pictures|Game-to-film studio — Dead Take + Unholy Trinity||||| studio,games
+BR|Studios, Orgs & Causes|Whaadle Works|Studio|https://www.whaadleworks.com/home|||| studio
+BR|Studios, Orgs & Causes|Eco-Set|Recycled / upcycled film sets — $20/entry||||| film,sustainability
+EXP|Travel|Onassis ONX|Immersive art collective (ONX Studio)||NYC||| art,immersive
+BR|Studios, Orgs & Causes|Octavia Lab|Maker/media lab — LA Public Library, Central Branch||Downtown LA||| resource,la
+BR|Studios, Orgs & Causes|Works By Design|YouTube channel — the "un-pickable" lock||||| youtube
+BR|Studios, Orgs & Causes|Dream Realm Storytellers|DEMONHEART module — Daggerheart expansion; publisher||||| ttrpg,publishing
+BR|Misc / To Sort|Sunflower Murasaki Ferry|Needs context|||||
+BR|Misc / To Sort|Tenant of the Spark|Needs context — game/book?|||||
+BR|Misc / To Sort|Ravikant|Person — likely Naval Ravikant?||||| contact
+BR|Misc / To Sort|Shinichi Yokohama|Person / contact||||| contact
+WATCH|Films|964 Pinocchio|1991 Japanese cyberpunk cult film||||| film
+BR|Misc / To Sort|California → Seattle 35hr train ride|Scenic Coast Starlight trip idea||||| travel
+
+EXP|Local|Astra Lumina|Night light-walk — South Coast Botanic Garden. Tix on FEVER.|https://feverup.com|26300 Crenshaw Blvd, LA|||d|immersive
+EXP|Local|Doodlegang LA|Free — creatives meet & draw, all levels||LA||| art,free
+EXP|Local|Escape Hotel|Escape rooms||Hollywood, LA||| escaperoom
+EXP|Local|Escape Revolution|Escape rooms||Fairfax, LA||| escaperoom
+EXP|Local|Cheech Marin Center for the Chicano Arts||Riverside, CA||| museum,art|
+EXP|Local|Yamashiro Hollywood|Historic hilltop restaurant||Hollywood, LA||| food
+EXP|Local|Puppet Up!|Jim Henson adult comedy / puppet show||LA||| show
+EXP|Local|Spa Palace|Korean spa||Koreatown, LA||| spa
+EXP|Local|Divine Vintage|Wine shop||Santa Monica||| food,shop
+EXP|Local|Hammer Museum||Westwood, LA||| museum|
+EXP|Local|Benevolent Beings|At the Norton Simon Museum||Pasadena||| museum
+EXP|Local|Sunset Blvd Nursery||Silverlake, LA||| outdoors,shop|
+EXP|Local|Murder At The Speakeasy|Immersive murder mystery||LA||| immersive
+EXP|Local|Stained Glass Studio||Chinatown, LA||| craft|
+EXP|Local|Gallery 825||LA|August 10||art|
+EXP|Local|All Out for Fallout||LA|Aug 15|d|event|
+EXP|Local|Succubus Club / SXTCY LA|(adult)||LA||x|nightlife,adult
+EXP|Local|GoGoSonic||Irvine, CA||| |
+EXP|Local|Remainders Creative Reuse|Craft thrift store||Pasadena||| shop,thrift
+EXP|Local|Sun Space|Music venue||Shadow Hills, CA||| music,venue
+EXP|Local|Tea At Shiloh|Tea + watercolors||Arts District, LA||d|art
+EXP|Local|The Batman @ Hollywood Bowl|Live score session|https://bit.ly/3WvpOo4|Hollywood Bowl, LA|Apr 15|x|music,film
+EXP|Local|Thrift — Assistance League of Santa Monica||Santa Monica||| thrift|
+EXP|Local|Thrift — 2nd Street Santa Monica||Santa Monica||| thrift|
+EXP|Local|Thrift — American Cancer Society Discovery Shop||LA||| thrift|
+EXP|Local|Thrift — Crossroads||LA||| thrift|
+EXP|Local|Thrift — St Matthews Thrift Shop||LA||| thrift|
+EXP|Local|Thrift — TROVE||LA||| thrift|
+EXP|Travel|Idiotarod|Shopping-cart race / competition||NYC||| event
+EXP|Travel|House of Yes|Performance-art nightclub||Brooklyn, NYC||| nightlife
+EXP|Travel|Shot of Art NYC||NYC||| art|
+EXP|Travel|Beyond The Light|Art experience||NYC||| immersive,art
+EXP|Travel|The Summit @ One Vanderbilt|Observation deck||NYC||| view
+EXP|Travel|The Sonic Sphere||NYC||| immersive,music|
+EXP|Travel|Forbidden Planet|Comic shop||NYC||d|shop
+EXP|Travel|Mysterious Bookshop||NYC||| shop,book|
+EXP|Travel|"We Buy White Albums"|Record-art installation||NYC||| art,music
+EXP|Travel|Academy Records + A1||Brooklyn, NYC||d|shop,music|
+EXP|Travel|The Greenbrier Hotel||West Virginia||| hotel|
+EXP|Travel|McKays Used Books||Tennessee||| shop,book|
+EXP|Travel|Floppy Disk Repair Co|Speakeasy||Austin, TX||| bar
+EXP|Travel|End of an Ear|Record store||Austin, TX||| shop,music
+EXP|Travel|Yucca Tap Room||Tempe, AZ||| music,venue|
+EXP|Travel|Factory Obscura|Immersive art||Oklahoma City, OK||| immersive,art
+EXP|Travel|Skunk Train to Glen Blair Bar||Mendocino, CA||| outdoors|
+EXP|Travel|Fern Canyon Trail|Redwoods hike||Humboldt, CA||| outdoors,hike
+EXP|Travel|21C Museum Hotels|Art-hotel chain||US (multi-city)||| hotel,art
+EXP|International|Artnia — Square Enix Cafe||Tokyo, Japan||| food|
+EXP|International|Zauo Fishing Restaurant|Catch your own dinner||Osaka, Japan||| food
+EXP|International|TeamLab Planets|Immersive digital art||Tokyo, Japan||| immersive,art
+EXP|International|Round1 Stadium|Mega arcade / entertainment||Osaka, Japan||| arcade
+EXP|International|Den Den Town / Ame-mura / Expo City||Osaka, Japan||| shop|
+EXP|International|"Missing Post Office"|Art project — letters with no destination||Teshima, Japan||| art
+EXP|International|BoBosco Hike — Verzasca Valley||Switzerland||| outdoors,hike|
+EXP|International|Taste Film|Immersive cinema experience||London, UK||| immersive,film
+EXP|International|Puy du Fou|Fountain / water show||France||| show
+EXP|International|AMAZE Amsterdam|Immersive art||Amsterdam, NL||| immersive,art
+EXP|International|Turda Salt Mines||Romania||| outdoors|
+EXP|International|Odeon Giunti|Cinema + bookstore||Italy||| film,book
+EXP|International|Falmouth Worm Charming Competition||UK||| event,oddity|
+EXP|International|Enchanted Forest||Vancouver, BC||| outdoors|
+EXP|International|Where Dark Things Dwell|Escape room / experience||Toronto||| escaperoom
+EXP|International|Storm Crow Manor|Nerd / fantasy bar-hotel||Toronto||| bar,hotel
+EXP|International|TRS Yucatan Hotel|"Adults only" retreat||Yucatan, Mexico||| hotel,getaway
+EXP|International|Biblioteca Vasconcelos|Mega "floating" library||Mexico City||| architecture
+EXP|International|Vinyl Cafe — Suwon Starfield||Suwon, Korea||| music,shop|
+EXP|Online & Touring|Flutter|Experience|https://flutterexperience.com|||| immersive
+EXP|Online & Touring|SFX Swap|Marketplace|https://www.sfxswap.com/||Mar 1 / Apr|d|marketplace
+EXP|Online & Touring|Corteo — Cirque du Soleil|Touring show||||d|show
+EXP|Online & Touring|Super Chief Gallery|Art gallery (LA + NYC)||||| art
+EXP|Online & Touring|Torn Apart|Punk exhibition||||| art
+EXP|Online & Touring|The Little Friend|Bar||||| bar
+EXP|Online & Touring|Blockbuster Bar||||| x|bar
+EXP|Online & Touring|Crumbs + Whiskers|Cat / kitten cafe|||||
+EXP|Online & Touring|(5) 222 Experiences|Five "222" experiences noted|||||
+EXP|Online & Touring|200 Trunks, 200 Artists: The Exhibition||||| art|
+EXP|Online & Touring|Contact: The Daft Punk Immersive Experience||||| immersive,music|
+EXP|Online & Touring|La La Land in Concert|Live score|https://www.tixr.com/groups/streetfoodcinema/events/la-la-land-in-concert-74206|||| music,film
+EXP|Online & Touring|The Rendition Room|Speakeasy||||| bar
+EXP|Online & Touring|Tiki Mirage|Tiki bar||||| bar
+EXP|Online & Touring|Angel of Light|Horror experience||||| immersive,horror
+EXP|Local|Dark Library: The Time Machine|After Hours Theatre — immersive theatre||LA||| immersive,theatre
+EXP|Online & Touring|CineVita|Live theater / music inspired by films||||| show,film
+
+HEAR|Albums|Gustav Holst — The Planets|Movements|||||
+HEAR|Songs|Pas de deux — The Nutcracker|||||| 
+HEAR|Songs|Chopin — Prelude in E Minor|||||| 
+HEAR|Artists|Deyzave|||||| electronic
+HEAR|Artists|Lawrence|Soul / pop band|||||
+HEAR|Artists|Thumpasaurus|||||| 
+HEAR|Artists|Cassie Wieland|Composer|||||
+HEAR|Artists|Durand Bernarr|Tiny Desk|||||
+HEAR|Artists|Vanisha Gould + Lucy Yeghiazaryan|Jazz vocalists|||||
+HEAR|Artists|Calva Louise|||||| 
+HEAR|Artists|Atarashii Gakko! / Leaders|||||| jpop
+HEAR|Artists|Seraphine Noir|||||| 
+HEAR|Artists|Khruangbin|||||| 
+HEAR|Artists|Supergold|||||| 
+HEAR|Artists|President|Band|||||
+HEAR|Artists|Chapman|Band — NYC||NYC|||
+HEAR|Artists|Caracal Project|"Set It Off"|||||
+HEAR|Artists|Akudama|||||| 
+HEAR|Songs|Exhale Inhale — AURORA|||||| 
+HEAR|Songs|Yo Me Llamo Cumbia — Selin Gulor|||||| 
+HEAR|Songs|Rebola No Meu Caralho — MTG|Brazilian funk|||||
+HEAR|Songs|Simon Says — Don Darko Remix|||||| 
+HEAR|Songs|Moonfall — Ichika Nito|||||| 
+HEAR|Songs|Dreams — Elephant Gym|||||| 
+HEAR|Songs|Liminal_ — No Oath|||||| 
+HEAR|Songs|Trials — Jon Casey Remix|||||| 
+HEAR|Songs|Lose Control — Teddy Swims|||||| 
+HEAR|Songs|Rollin' On — Jackie Venson|||||| 
+HEAR|Songs|Splish Splash — Mista Trick & Spencer Ram|||||| 
+HEAR|Songs|Got Me Started — Troye Sivan|||||| 
+HEAR|Songs|Iloilo — Billie Eilish|||||| 
+HEAR|Songs|New Drifters — The American Analog Set|||||| 
+HEAR|Songs|Doin' It Right — sampled Prost remix|On Soundcloud / Bandcamp|||||
+HEAR|Songs|"Dreaming" — T-Pain|||||| 
+HEAR|Songs|Summertime Love Song — Milky Way|||||| 
+HEAR|Songs|Kim Younggeun — Superstar K (2016)|Korean singing show clip|||||
+HEAR|Albums|Tekno Kayo Vol. 1|Japanese techno city-pop (Dubby & Antal)|||||
+HEAR|Albums|YOASOBI — The Book III|||||| 
+
+PLAY|Video Games|The Day Before|Zombie survival|||||
+PLAY|Video Games|Marauders|"Space Tarkov"|||||
+PLAY|Video Games|The Chant|Steam|||||
+PLAY|Video Games|Evil West|||||| 
+PLAY|Video Games|Blight|Medieval survival|||||
+PLAY|Video Games|Skull and Bones|PC|||||
+PLAY|Video Games|Sniper Ghost Warrior|||||| 
+PLAY|Video Games|Lies of P|||||| 
+PLAY|Video Games|Manor Lords|||||| 
+PLAY|Video Games|The Longing|||||| 
+PLAY|Video Games|Dave The Diver|Steam — "hahahaha"|||||
+PLAY|Video Games|Starfield|PC|||||d
+PLAY|Video Games|Baldur's Gate 3|Steam|||||d
+PLAY|Video Games|Chants of Sennaar|Steam / Switch|||||
+PLAY|Video Games|Pizza Possum|Co-op|||||
+PLAY|Video Games|Cocoon|||||| 
+PLAY|Video Games|Nivalis|Cyberpunk sim|||||
+PLAY|Video Games|PARALives|||||| 
+PLAY|Video Games|Last Sentinel|||||| 
+PLAY|Video Games|Moving Out 2|||||| 
+PLAY|Video Games|Duviri Paradox|Warframe expansion|||||
+PLAY|Video Games|Horror High|Play-tested @ Guildhall|||||
+PLAY|Video Games|Nobody Wants To Die|Steam|||||
+PLAY|Video Games|Pode|||||| 
+PLAY|Video Games|The Lift|||||| 
+PLAY|Video Games|Norco|||||| 
+PLAY|Video Games|Mouthwashing|||||| 
+PLAY|Video Games|Stranger Than Heaven|SEGA|||||
+PLAY|Video Games|Join Us.|Cult-leader game|||||
+PLAY|Video Games|Windrose|Pirate survival|||||
+PLAY|Video Games|Replaced|||||| 
+PLAY|Video Games|ONTOS|||||| 
+PLAY|Video Games|Sol Cesto|||||| 
+PLAY|Video Games|Nekome: Nazi Hunter|||||| 
+PLAY|Video Games|Wyldheart|Wayfinder Studios (Swedish devs) — release TBD|https://www.kickstarter.com/projects/wayfinderstudios/wyldheart/||TBD||
+PLAY|TTRPG|A World Beyond Numbers|TTRPG — Brennan Lee Mulligan + Critical Role cast||||| ttrpg,contact
+PLAY|TTRPG|Thousand Year Old Vampire|Solo TTRPG journaling game|https://thousandyearoldvampire.com/products/thousand-year-old-vampire|||| ttrpg
+PLAY|TTRPG|Ring of Chaos|D&D resource / betrayal & management game||||| ttrpg
+PLAY|TTRPG|The City of Mist / Legend in the Mist|TTRPG||||| ttrpg
+PLAY|Board Games|Townsfolk Tussle|||||| board
+PLAY|Board Games|Rolling Heights|||||| board
+PLAY|Board Games|Twilight Struggle|||||| board
+PLAY|Board Games|Micro Macro: Crime City|||||| board
+PLAY|Board Games|Takenoko|||||| board
+PLAY|Board Games|Twilight Imperium|||||| board
+PLAY|Board Games|Kelp|Shark vs octopus, 2-player asymmetric|https://www.kickstarter.com/projects/wonderbowgames/kelp-shark-vs-octopus-2-player-asymmetrical-game|||| board
+PLAY|ARGs & Interactive|Welcome Home|ARG|https://www.clownillustration.com/welcomehomeyou|||| arg
+PLAY|Game Resources|Emulatorgames.online|Browser emulator library|https://emulatorgames.online|||| emulator
+
+WATCH|TV & Series|1923|Paramount+||||| tv
+WATCH|TV & Series|Boardwalk Empire|5 seasons||||| tv
+WATCH|TV & Series|Mythic Quest|||||| tv
+WATCH|TV & Series|The Patient|FX / Hulu||||| tv
+WATCH|TV & Series|The Bear|S1, S2||||| tv
+WATCH|TV & Series|The Leftovers|||||| tv
+WATCH|TV & Series|Modern Love|Amazon||||| tv
+WATCH|TV & Series|Pachinko|||||| tv
+WATCH|TV & Series|Peaky Blinders|S1–S6||||| tv
+WATCH|TV & Series|Yellowjackets|||||| tv
+WATCH|TV & Series|Schmigadoon|AppleTV||||| tv
+WATCH|TV & Series|The Glory|||||| tv
+WATCH|TV & Series|The Terror|||||| tv
+WATCH|TV & Series|As We See It|||||| tv
+WATCH|TV & Series|Perfect Days (K-Drama)|Note: also a Wim Wenders film of the same name||||| tv
+WATCH|Films|Wandering Earth 1 / 2|||||d|
+WATCH|Films|65|||||d|
+WATCH|Films|Close|||||| 
+WATCH|Films|Super Mario Bros: The Movie|||||d|
+WATCH|Films|My Sister's Keeper|||||| 
+WATCH|Films|I See You|||||| 
+WATCH|Films|Monkeybone|||||| 
+WATCH|Films|Detachment|||||| 
+WATCH|Films|Inside — Willem Dafoe|||||d|
+WATCH|Films|The Specials|||||| 
+WATCH|Films|Talk To Me|||||d|
+WATCH|Films|Midori|Live action||||| 
+WATCH|Films|Juliet of the Spirits|||||| 
+WATCH|Films|Toys (1992)|||||| 
+WATCH|Films|Dreams — Akira Kurosawa|||||| 
+WATCH|Films|Joyride|Upcoming|||||
+WATCH|Films|Ran — Akira Kurosawa|||||| 
+WATCH|Films|Come and See (1985)|Elem Klimov|||||
+WATCH|Films|Prayer Before Dawn|||||| 
+WATCH|Films|Almost Famous (2000)|||||| 
+WATCH|Films|Punishment Park|||||| 
+WATCH|Films|The Creator|||||d|
+WATCH|Films|How Do You Live? — Miyazaki|||||| 
+WATCH|Films|Dumb Money|||||d|
+WATCH|Films|A Hollow Tree|Coming soon|||||
+WATCH|Films|After Yang|||||| 
+WATCH|Films|Funny Games — Haneke|||||| 
+WATCH|Films|The Ballad of Buster Scruggs|||||| 
+WATCH|Films|We Were Soldiers|||||| 
+WATCH|Films|Problemista|||||d|
+WATCH|Films|Then Came You (2008)|||||| 
+WATCH|Films|Unidentified Objects|Juan Felipe Zuleta|||||
+WATCH|Films|Theater Camp|||||d|
+WATCH|Films|Burn|||||| 
+WATCH|Films|War Horse|||||| 
+WATCH|Films|One Life (2023)|||||| 
+WATCH|Films|Save Ralph|Short — claymation||||| short
+WATCH|Films|Poor Things|Watched x2||||d|
+WATCH|Films|Filip (2023)|||||| 
+WATCH|Films|Rebel Moon|"Zack Snyder Star Wars"||||d|
+WATCH|Films|The Necessary Death of Charlie Countryman|||||| 
+WATCH|Films|Saltburn|||||d|
+WATCH|Films|The Zone of Interest|Watched x2||||d|
+WATCH|Films|Ferrari|||||| 
+WATCH|Films|Eileen|||||| 
+WATCH|Films|Night Swim|||||| 
+WATCH|Films|Scavenger|||||| 
+WATCH|Films|The Killer|Netflix||||d|
+WATCH|Films|When Evil Lurks|Netflix|||||
+WATCH|Films|Along With The Gods: The Two Worlds|||||| 
+WATCH|Films|The Chaser|||||| 
+WATCH|Films|The Villainess|||||| 
+WATCH|Films|The Man From Nowhere|||||| 
+WATCH|Films|A Bittersweet Life|||||| 
+WATCH|Films|The Yellow Sea|||||| 
+WATCH|Films|She Came To Me|||||| 
+WATCH|Films|Mommy|||||| 
+WATCH|Films|Lisa Frankenstein|||||d|
+WATCH|Films|Monster|Foreign film|||||
+WATCH|Films|Perfect Days|Wim Wenders|||||
+WATCH|Films|Bottoms|||||d|
+WATCH|Films|Foe|||||| 
+WATCH|Films|May December|||||| 
+WATCH|Films|The Master (2012)|||||| 
+WATCH|Films|BlackBerry (2023)|||||d|
+WATCH|Films|The Killing of Two Lovers|||||| 
+WATCH|Films|Midnight In Paris|||||| 
+WATCH|Films|Across The Universe|||||| 
+WATCH|Films|About Time|||||| 
+WATCH|Films|The Taste of Things|||||| 
+WATCH|Films|Wicked Little Letters|||||| 
+WATCH|Films|Monkey Man|||||d|
+WATCH|Films|Love Lies Bleeding|||||d|
+WATCH|Films|In A Violent Nature|||||d|
+WATCH|Films|Arcadian|||||| 
+WATCH|Films|Exhuma|K-horror||||d|
+WATCH|Films|Boy Kills World|||||d|
+WATCH|Films|Megalopolis|||||| 
+WATCH|Films|Alien: Romulus|||||d|
+WATCH|Films|What's Wrong With The Children|||||| 
+WATCH|Films|Cabrini|||||| 
+WATCH|Films|The Peasants|||||| 
+WATCH|Films|The Watchers|||||d|
+WATCH|Films|Cure|||||| 
+WATCH|Films|Naga|||||| 
+WATCH|Films|Dim Sum: A Little Bit of Heart|||||| 
+WATCH|Films|A Different Man|||||d|
+WATCH|Films|Sunset Sasquatch|||||| 
+WATCH|Films|Robot Dreams|||||| 
+WATCH|Films|First Love — Takashi Miike|||||| 
+WATCH|Films|Concrete Utopia|||||| 
+WATCH|Films|Death & Ramen|||||| 
+WATCH|Films|The Absence of Eden|||||| 
+WATCH|Films|Evil Does Not Exist|||||d|
+WATCH|Films|I Saw The TV Glow|||||d|
+WATCH|Films|Longlegs|||||d|
+WATCH|Films|Sight|||||| 
+WATCH|Films|Daddio|||||| 
+WATCH|Films|Ezra|||||| 
+WATCH|Films|Last Summer|||||| 
+WATCH|Films|Kinds of Kindness|||||d|
+WATCH|Films|Didi|||||| 
+WATCH|Films|National Anthem|||||| 
+WATCH|Films|7 Days In Hell|||||| 
+WATCH|Films|Silence|||||| 
+WATCH|Films|A Real Pain|||||| 
+WATCH|Films|Synecdoche, New York|||||| 
+WATCH|Films|Anora|||||| 
+WATCH|Films|Starve Acre|||||| 
+WATCH|Films|We Live in Time|Loved it||||p|
+WATCH|Films|Goodrich|||||| 
+WATCH|Films|Companion|||||| 
+WATCH|Films|Mickey 17|||||d| 
+WATCH|Films|The Electric State|||||| 
+WATCH|Films|The 12th Man|||||| 
+WATCH|Films|Nickel Boys|||||| 
+WATCH|Films|The Brutalist|Watched — not for me||||d| 
+WATCH|Films|September 5|||||| 
+WATCH|Films|Presence|||||| 
+WATCH|Films|28 Weeks Later|||||| 
+WATCH|Films|Death of a Unicorn|||||d| 
+WATCH|Films|Black Bag|Funny||||d|
+WATCH|Films|Last Breath|||||| 
+WATCH|Films|Ballerina|||||| 
+WATCH|Films|Paris, Texas|||||| 
+WATCH|Films|The Alto Knights|||||| 
+WATCH|Films|Queer|||||| 
+WATCH|Films|Sinners|Favorite||||p|
+WATCH|Films|The Ballad of Wallis Island|||||d|
+WATCH|Films|Friendship|||||d|
+WATCH|Films|Bring Her Back|||||d|
+WATCH|Films|The Life of Chuck|||||d|
+WATCH|Films|HIM|Football horror|||||
+WATCH|Films|Don't Worry|||||| 
+WATCH|Films|Fantastic Four|||||| 
+WATCH|Films|A Big Bold Beautiful Journey|||||| 
+WATCH|Films|The Roses|||||| 
+WATCH|Films|Splitsville|||||| 
+WATCH|Films|Together|||||| 
+WATCH|Films|Eddington|Watched — not for me||||d|
+WATCH|Films|Caught Stealing|Watched — not for me||||d|
+WATCH|Films|Eastern Promises|||||| 
+WATCH|Films|Goblin of Lang Lang Mountain (浪浪山小妖怪)|||||| 
+WATCH|Films|Son of the White Mare|||||| 
+WATCH|Films|Life of Pi|||||| 
+WATCH|Films|The Grand Budapest Hotel|||||| 
+WATCH|Films|Fantastic Mr. Fox|||||| 
+WATCH|Films|Our Little Sister — Koreeda|||||| 
+WATCH|Films|The Medium (2021)|||||| 
+WATCH|Films|She Rides Shotgun|||||| 
+WATCH|Films|Roofman|||||| 
+WATCH|Films|The Toxic Avenger|||||| 
+WATCH|Films|Rabbit Trap|||||| 
+WATCH|Films|Hamnet|Watched x2||||d|
+WATCH|Films|Bugonia|||||d|
+WATCH|Films|The Baltimorons|||||| 
+WATCH|Films|The History of Sound|||||| 
+WATCH|Films|Is This Thing On|||||| 
+WATCH|Films|Rental Family|||||| 
+WATCH|Films|Anemone|Also noted as "Anomore"|||||
+WATCH|Films|Blue Moon|||||| 
+WATCH|Films|Die My Love|||||| 
+WATCH|Films|The Mastermind|||||| 
+WATCH|Films|Sometimes I Think About Dying|||||| 
+WATCH|Films|Bonjour Tristesse|||||| 
+WATCH|Films|Ella McKay|||||| 
+WATCH|Films|Marty Supreme|Watched — not for me||||d|
+WATCH|Films|The Bride|||||| 
+WATCH|Films|Keeper|||||| 
+WATCH|Films|The Testament of Ann Lee|||||| 
+WATCH|Films|Arco|||||| 
+WATCH|Films|Crime 101|||||| 
+WATCH|Films|Sense & Sensibility|4K re-release|||||
+WATCH|Films|Last Days (2025)|||||| 
+WATCH|Films|The Choral|||||| 
+WATCH|Films|La Grazia|||||| 
+WATCH|Films|The Secret Agent|||||| 
+WATCH|Films|Resurrection|China, 2025|||||
+WATCH|Films|The Carpenter's Son|||||| 
+WATCH|Films|Fackham Hall|||||| 
+WATCH|Films|Good Luck, Have Fun, Don't Die|||||d|
+WATCH|Films|The Voice of Hind Rajab|Heavy subject — note||||w|
+WATCH|Films|The Plague|||||| 
+WATCH|Films|Dracula (2026)|||||| 
+WATCH|Films|ALPHA|NEON|||||
+WATCH|Films|Sinopse|||||| 
+WATCH|Films|Teenage Sex and Death at Camp Miasma|||||| 
+WATCH|Films|Christmas Carol (2022)|K-film|||||
+WATCH|Films|Backrooms|||||| 
+WATCH|Films|Hokum|||||| 
+WATCH|Films|Undertone|||||| 
+WATCH|Films|Tuner|||||| 
+WATCH|Films|The Collector|||||| 
+WATCH|Films|Marama|||||| 
+WATCH|Films|The True Beauty of Being Bitten By A Tick|||||| 
+WATCH|Films|The Mill|||||| 
+WATCH|Films|The Furious|||||| 
+WATCH|Films|The Last Guest of the Holloway Motel|||||| 
+WATCH|Films|Threads (1984)|||||| 
+WATCH|Films|The Son|||||| 
+WATCH|Films|Magazine Dreams|||||| 
+WATCH|Films|Tuesday (2023)|||||| 
+WATCH|Documentaries|The Wicked + Wonderful Whites|||||| 
+WATCH|Documentaries|Eldorado: Everything The Nazis Hate|Netflix||||| 
+WATCH|Documentaries|The Act of Killing|||||| 
+WATCH|Documentaries|The Emperor's Naked Army Marches On|||||| 
+WATCH|Documentaries|Streetwise|||||| 
+WATCH|Documentaries|Still|Michael J. Fox|||||
+WATCH|Documentaries|The Law In These Parts|||||| 
+WATCH|Documentaries|The Last Year of Darkness|Heavy subject — note||||w|
+WATCH|Documentaries|Glitch: The Rise & Fall of HQ Trivia|||||| 
+WATCH|Documentaries|Writing With Fire|||||| 
+WATCH|Documentaries|Dear Zachary|||||| 
+WATCH|Documentaries|Queendom|||||| 
+WATCH|Documentaries|The Grab|||||| 
+WATCH|Documentaries|Babo: The Haftbefehl Story|||||| 
+WATCH|Films|The Summit of the Gods|Animated feature||||| anime
+WATCH|Anime|Zom 100|||||d|
+WATCH|Anime|Samurai Champloo|||||| 
+WATCH|Anime|The Boy and the Heron|Miyazaki|||Dec 8 2023|d|
+WATCH|Anime|Blue Giant|||||| 
+WATCH|Anime|Madoka Magica|||||| 
+WATCH|Anime|Scarlett|||||| 
+WATCH|Anime|Original Sin|MAJOR trigger warning||||w|
+WATCH|Short Films|Valentine|Upcoming||||| 
+WATCH|Short Films|Piaffe|Foley-focused|||||
+WATCH|Short Films|The Disappearance of Willie Bingham|||||| 
+WATCH|Short Films|The Wonderful Story of Henry Sugar|||||| 
+WATCH|Short Films|Best Friend|||||| 
+WATCH|Web & YouTube|Blake + Son|YouTube series|||||
+WATCH|Web & YouTube|Inside the Daily Life of a Live-Streaming Star in China|||||| 
+WATCH|Web & YouTube|The Future is a Dead Mall|Decentraland / metaverse|||||
+WATCH|Web & YouTube|Becoming Clarence Thomas|Slate YouTube channel|||||
+WATCH|Web & YouTube|The Glitter Conspiracy|YT doc|||||
+WATCH|Web & YouTube|The American Working Class (2005)|||||| 
+WATCH|Films|28 Years Later|Possible overlap with existing “28 Weeks Later” — flagged for you||||x|horror
+WATCH|TV & Series|We Are All Trying Here|||||| 
+WATCH|Films|Wildwoods|||||| 
+WATCH|Films|Wild Horse Nine|||||| 
+WATCH|Films|Leviticus|||||| 
+WATCH|Films|Pressure|||||| 
+WATCH|Films|The Dog Stars|From Peter Heller’s post-apocalyptic novel||||| 
+WATCH|Films|Onslaught|||||| 
+WATCH|Films|Primetime|||||| 
+WATCH|Films|The Rivals of Amazing King|||||| 
+WATCH|Films|Tony|||||| 
+`.trim();
+
+/* director|genre|avail for Watch */
+const META = {
+"1923":"|Drama|","Boardwalk Empire":"|Crime|","Mythic Quest":"|Comedy|","The Patient":"|Thriller|","The Bear":"|Comedy|","The Leftovers":"|Drama|","Modern Love":"|Romance|","Pachinko":"|Drama|","Peaky Blinders":"|Crime|","Yellowjackets":"|Thriller|","Schmigadoon":"|Musical|","The Glory":"|Thriller|","The Terror":"|Horror|","As We See It":"|Comedy|","Perfect Days (K-Drama)":"|Drama|",
+"Wandering Earth 1 / 2":"Frant Gwo|Sci-Fi|","65":"Beck & Woods|Sci-Fi|","Close":"Lukas Dhont|Drama|","Super Mario Bros: The Movie":"Horvath & Jelenic|Animation|","My Sister's Keeper":"Nick Cassavetes|Drama|","I See You":"Adam Randall|Thriller|","Monkeybone":"Henry Selick|Fantasy|","Detachment":"Tony Kaye|Drama|","Inside — Willem Dafoe":"Vasilis Katsoupis|Drama|","The Specials":"Nakache & Toledano|Comedy|","Talk To Me":"Philippou Bros|Horror|","Midori":"Torico|Drama|","Juliet of the Spirits":"Federico Fellini|Fantasy|","Toys (1992)":"Barry Levinson|Comedy|","Dreams — Akira Kurosawa":"Akira Kurosawa|Fantasy|","Joyride":"|Comedy|upcoming","Ran — Akira Kurosawa":"Akira Kurosawa|War|","Come and See (1985)":"Elem Klimov|War|","Prayer Before Dawn":"J-S Sauvaire|Drama|","Almost Famous (2000)":"Cameron Crowe|Music|","Punishment Park":"Peter Watkins|Drama|","The Creator":"Gareth Edwards|Sci-Fi|","How Do You Live? — Miyazaki":"Hayao Miyazaki|Animation|","Dumb Money":"Craig Gillespie|Comedy|","A Hollow Tree":"|Horror|upcoming","After Yang":"Kogonada|Sci-Fi|","Funny Games — Haneke":"Michael Haneke|Thriller|","The Ballad of Buster Scruggs":"Coen Brothers|Western|","We Were Soldiers":"Randall Wallace|War|","Problemista":"Julio Torres|Comedy|","Then Came You (2008)":"|Romance|","Unidentified Objects":"J F Zuleta|Drama|","Theater Camp":"Gordon & Lieberman|Comedy|","Burn":"|Thriller|","War Horse":"Steven Spielberg|War|","One Life (2023)":"James Hawes|Drama|","Save Ralph":"Spencer Susser|Animation|","Poor Things":"Yorgos Lanthimos|Fantasy|","Filip (2023)":"Michał Kwieciński|War|","Rebel Moon":"Zack Snyder|Sci-Fi|","The Necessary Death of Charlie Countryman":"Fredrik Bond|Romance|","Saltburn":"Emerald Fennell|Thriller|","The Zone of Interest":"Jonathan Glazer|Drama|","Ferrari":"Michael Mann|Biopic|","Eileen":"William Oldroyd|Thriller|","Night Swim":"Bryce McGuire|Horror|","Scavenger":"|Horror|","The Killer":"David Fincher|Thriller|","When Evil Lurks":"Demián Rugna|Horror|","Along With The Gods: The Two Worlds":"Kim Yong-hwa|Fantasy|","The Chaser":"Na Hong-jin|Crime|","The Villainess":"Jung Byung-gil|Action|","The Man From Nowhere":"Lee Jeong-beom|Action|","A Bittersweet Life":"Kim Jee-woon|Crime|","The Yellow Sea":"Na Hong-jin|Crime|","She Came To Me":"Rebecca Miller|Romance|","Mommy":"Xavier Dolan|Drama|","Lisa Frankenstein":"Zelda Williams|Comedy|","Monster":"Hirokazu Koreeda|Drama|","Perfect Days":"Wim Wenders|Drama|","Bottoms":"Emma Seligman|Comedy|","Foe":"Garth Davis|Sci-Fi|","May December":"Todd Haynes|Drama|","The Master (2012)":"Paul Thomas Anderson|Drama|","BlackBerry (2023)":"Matt Johnson|Drama|","The Killing of Two Lovers":"Robert Machoian|Drama|","Midnight In Paris":"Woody Allen|Romance|","Across The Universe":"Julie Taymor|Musical|","About Time":"Richard Curtis|Romance|","The Taste of Things":"Tran Anh Hung|Romance|","Wicked Little Letters":"Thea Sharrock|Comedy|","Monkey Man":"Dev Patel|Action|","Love Lies Bleeding":"Rose Glass|Crime|","In A Violent Nature":"Chris Nash|Horror|","Arcadian":"Ben Brewer|Horror|","Exhuma":"Jang Jae-hyun|Horror|","Boy Kills World":"Moritz Mohr|Action|","Megalopolis":"Francis Ford Coppola|Sci-Fi|","Alien: Romulus":"Fede Álvarez|Horror|","What's Wrong With The Children":"Roxanne Benjamin|Horror|","Cabrini":"Alejandro Monteverde|Biopic|","The Peasants":"DK & Hugh Welchman|Animation|","The Watchers":"Ishana Night Shyamalan|Horror|","Cure":"Kiyoshi Kurosawa|Horror|","Naga":"Meshal Aljaser|Thriller|","Dim Sum: A Little Bit of Heart":"Wayne Wang|Drama|","A Different Man":"Aaron Schimberg|Comedy|","Sunset Sasquatch":"|Comedy|","Robot Dreams":"Pablo Berger|Animation|","First Love — Takashi Miike":"Takashi Miike|Crime|","Concrete Utopia":"Um Tae-hwa|Drama|","Death & Ramen":"|Comedy|","The Absence of Eden":"Marco Perego|Drama|","Evil Does Not Exist":"Ryusuke Hamaguchi|Drama|","I Saw The TV Glow":"Jane Schoenbrun|Horror|","Longlegs":"Oz Perkins|Horror|","Sight":"Andrew Hyatt|Biopic|","Daddio":"Christy Hall|Drama|","Ezra":"Tony Goldwyn|Comedy|","Last Summer":"Catherine Breillat|Drama|","Kinds of Kindness":"Yorgos Lanthimos|Comedy|","Didi":"Sean Wang|Comedy|","National Anthem":"Luke Gilford|Drama|","7 Days In Hell":"Jake Szymanski|Comedy|","Silence":"Martin Scorsese|Drama|","A Real Pain":"Jesse Eisenberg|Comedy|","Synecdoche, New York":"Charlie Kaufman|Drama|","Anora":"Sean Baker|Comedy|","Starve Acre":"Daniel Kokotajlo|Horror|","We Live in Time":"John Crowley|Romance|","Goodrich":"Hallie Meyers-Shyer|Comedy|","Companion":"Drew Hancock|Sci-Fi|","Mickey 17":"Bong Joon-ho|Sci-Fi|","The Electric State":"Russo Brothers|Sci-Fi|","The 12th Man":"Harald Zwart|War|","Nickel Boys":"RaMell Ross|Drama|","The Brutalist":"Brady Corbet|Drama|","September 5":"Tim Fehlbaum|Thriller|","Presence":"Steven Soderbergh|Horror|","28 Weeks Later":"J C Fresnadillo|Horror|","Death of a Unicorn":"Alex Scharfman|Comedy|","Black Bag":"Steven Soderbergh|Thriller|","Last Breath":"Alex Parkinson|Thriller|","Ballerina":"Len Wiseman|Action|","Paris, Texas":"Wim Wenders|Drama|","The Alto Knights":"Barry Levinson|Crime|","Queer":"Luca Guadagnino|Drama|","Sinners":"Ryan Coogler|Horror|","The Ballad of Wallis Island":"James Griffiths|Comedy|","Friendship":"Andrew DeYoung|Comedy|","Bring Her Back":"Philippou Bros|Horror|","The Life of Chuck":"Mike Flanagan|Fantasy|","HIM":"Justin Tipping|Horror|","Don't Worry":"|Drama|","Fantastic Four":"Matt Shakman|Sci-Fi|","A Big Bold Beautiful Journey":"Kogonada|Romance|","The Roses":"Jay Roach|Comedy|","Splitsville":"M A Covino|Comedy|","Together":"Michael Shanks|Horror|","Eddington":"Ari Aster|Thriller|","Caught Stealing":"Darren Aronofsky|Crime|","Eastern Promises":"David Cronenberg|Crime|","Goblin of Lang Lang Mountain (浪浪山小妖怪)":"|Animation|","Son of the White Mare":"Marcell Jankovics|Animation|","Life of Pi":"Ang Lee|Adventure|","The Grand Budapest Hotel":"Wes Anderson|Comedy|","Fantastic Mr. Fox":"Wes Anderson|Animation|","Our Little Sister — Koreeda":"Hirokazu Koreeda|Drama|","The Medium (2021)":"Banjong Pisanthanakun|Horror|","She Rides Shotgun":"Nick Rowland|Crime|","Roofman":"Derek Cianfrance|Crime|","The Toxic Avenger":"Macon Blair|Comedy|","Rabbit Trap":"Bryn Chainey|Horror|","Hamnet":"Chloé Zhao|Drama|","Bugonia":"Yorgos Lanthimos|Sci-Fi|","The Baltimorons":"Jay Duplass|Comedy|","The History of Sound":"Oliver Hermanus|Romance|","Is This Thing On":"Bradley Cooper|Comedy|","Rental Family":"Hikari|Comedy|","Anemone":"Ronan Day-Lewis|Drama|","Blue Moon":"Richard Linklater|Drama|","Die My Love":"Lynne Ramsay|Thriller|","The Mastermind":"Kelly Reichardt|Crime|","Sometimes I Think About Dying":"Rachel Lambert|Drama|","Bonjour Tristesse":"Durga Chew-Bose|Drama|","Ella McKay":"James L. Brooks|Comedy|upcoming","Marty Supreme":"Josh Safdie|Drama|","The Bride":"Maggie Gyllenhaal|Horror|upcoming","Keeper":"Osgood Perkins|Horror|","The Testament of Ann Lee":"Mona Fastvold|Musical|","Arco":"Ugo Bienvenu|Animation|","Crime 101":"Bart Layton|Crime|upcoming","Sense & Sensibility":"Ang Lee|Romance|","Last Days (2025)":"Justin Lin|Drama|","The Choral":"Nicholas Hytner|Drama|","La Grazia":"Paolo Sorrentino|Drama|","The Secret Agent":"Kleber Mendonça Filho|Thriller|","Resurrection":"Bi Gan|Fantasy|","The Carpenter's Son":"Lotfy Nathan|Horror|","Fackham Hall":"|Comedy|","Good Luck, Have Fun, Don't Die":"Gore Verbinski|Sci-Fi|upcoming","The Voice of Hind Rajab":"Kaouther Ben Hania|Drama|","The Plague":"Charlie Polinger|Horror|","Dracula (2026)":"Luc Besson|Horror|upcoming","ALPHA":"Julia Ducournau|Horror|","Sinopse":"|Drama|","Teenage Sex and Death at Camp Miasma":"|Horror|","Christmas Carol (2022)":"|Drama|","Backrooms":"Kane Parsons|Horror|upcoming","Hokum":"|Drama|","Undertone":"|Drama|","Tuner":"Daniel Roher|Thriller|upcoming","The Collector":"|Horror|","Marama":"Taratoa Stappard|Horror|","The True Beauty of Being Bitten By A Tick":"Pete Ohs|Comedy|","The Mill":"Sean King O'Grady|Thriller|","The Furious":"Kenji Tanigaki|Action|","The Last Guest of the Holloway Motel":"|Horror|","Threads (1984)":"Mick Jackson|Drama|","The Son":"Florian Zeller|Drama|","Magazine Dreams":"Elijah Bynum|Drama|","Tuesday (2023)":"Daina O. Pusić|Fantasy|","964 Pinocchio":"Shozin Fukui|Sci-Fi|","The Wicked + Wonderful Whites":"|Documentary|","Eldorado: Everything The Nazis Hate":"|Documentary|","The Act of Killing":"Joshua Oppenheimer|Documentary|","The Emperor's Naked Army Marches On":"Kazuo Hara|Documentary|","Streetwise":"Martin Bell|Documentary|","Still":"Davis Guggenheim|Documentary|","The Law In These Parts":"R Alexandrowicz|Documentary|","The Last Year of Darkness":"Ben Mullinkosson|Documentary|","Glitch: The Rise & Fall of HQ Trivia":"|Documentary|","Writing With Fire":"Ghosh & Thomas|Documentary|","Dear Zachary":"Kurt Kuenne|Documentary|","Queendom":"Agniia Galdanova|Documentary|","The Grab":"Gabriela Cowperthwaite|Documentary|","Babo: The Haftbefehl Story":"|Documentary|","The Summit of the Gods":"Patrick Imbert|Animation|","Zom 100":"|Action|","Samurai Champloo":"Shinichiro Watanabe|Action|","The Boy and the Heron":"Hayao Miyazaki|Fantasy|","Blue Giant":"Yuzuru Tachikawa|Music|","Madoka Magica":"Akiyuki Shinbo|Fantasy|","Scarlett":"|Animation|","Original Sin":"|Drama|","Valentine":"|Drama|upcoming","Piaffe":"Ann Oren|Drama|","The Disappearance of Willie Bingham":"Matthew Richards|Horror|","The Wonderful Story of Henry Sugar":"Wes Anderson|Fantasy|","Best Friend":"|Drama|","28 Years Later":"Danny Boyle|Horror|"
+};
+
+/* seeded loglines (general consensus) — expandable */
+const LOGLINE = {
+"Poor Things":"Lanthimos's bawdy reanimated-woman fable; bravura design, an Emma Stone tour de force.",
+"The Zone of Interest":"The horror of Auschwitz heard, never shown — a chilling formal masterwork.",
+"Saltburn":"Lurid class satire at an English estate; divisive but deliciously decadent.",
+"Anora":"A sex worker's whirlwind marriage unravels — Baker's raucous, humane Palme winner.",
+"The Brutalist":"A sprawling postwar immigrant-architect epic; ambitious, monumental, divisive.",
+"Sinners":"Coogler's Delta vampire-blues original — electric, soulful, an instant favorite.",
+"We Live in Time":"A time-jumping romance; emotional and well-acted if a touch gimmicky.",
+"The Killer":"Fincher's cold, methodical assassin procedural — sleek, dryly funny.",
+"The Boy and the Heron":"Miyazaki's dense, dreamlike fable of grief — gorgeous and gleefully opaque.",
+"Talk To Me":"Possession horror via a haunted embalmed hand — nasty and remarkably assured.",
+"Bring Her Back":"The Philippous' grief-soaked foster-home horror — bleak and brutal.",
+"The Life of Chuck":"Flanagan's tender, backwards-told ode to one ordinary life.",
+"Hamnet":"Zhao's aching drama of the grief behind Shakespeare's lost son.",
+"Bugonia":"Lanthimos sci-fi: conspiracy theorists abduct a pharma CEO — abrasive and sharp.",
+"Megalopolis":"Coppola's chaotic utopian fable — a glorious, baffling swing for the fences.",
+"Alien: Romulus":"Lean, back-to-basics Alien horror — tense and crowd-pleasing.",
+"Longlegs":"Occult serial-killer dread with an unhinged Cage — atmospheric and much-hyped.",
+"I Saw The TV Glow":"Schoenbrun's haunting trans allegory refracted through a cult kids' show.",
+"Kinds of Kindness":"A Lanthimos triptych of cruelty and control — cold, strange, polarizing.",
+"Love Lies Bleeding":"A pumped-up '80s lesbian noir — pulpy, feverish, a blast.",
+"Monkey Man":"Patel's John-Wick-by-way-of-Mumbai revenge debut — brutal and earnest.",
+"Black Bag":"Soderbergh's spy-marriage thriller — tight, talky, impeccably stylish.",
+"Companion":"A robot-girlfriend genre flip — clever, nasty, a real crowd-pleaser.",
+"Mickey 17":"Bong's sci-fi class satire with disposable clones — messy but fun.",
+"Nickel Boys":"A first-person adaptation of the reform-school novel — formally bold, devastating.",
+"A Real Pain":"Eisenberg's funny, melancholy tale of mismatched cousins touring Poland.",
+"Didi":"A tender, specific Taiwanese-American coming-of-age set in the MySpace era.",
+"Inside — Willem Dafoe":"An art thief trapped in a luxury apartment — bleak one-man survival.",
+"Eddington":"Aster's COVID-era small-town western satire — sprawling and divisive.",
+"Caught Stealing":"Aronofsky's pulpy '90s NYC crime caper — a loose change of pace.",
+"Friendship":"Tim Robinson's cringe male-friendship comedy — agonizing and very funny.",
+"The Ballad of Wallis Island":"A gentle musician-on-an-island comedy — charming and bittersweet.",
+"Queer":"Guadagnino's woozy Burroughs adaptation — sensual, drifting, strange.",
+"Wicked Little Letters":"A foul-mouthed poison-pen village comedy — light and profane.",
+"The Taste of Things":"A sumptuous French culinary romance — slow and utterly ravishing.",
+"Perfect Days":"A Tokyo toilet cleaner's quiet routines — serene, humane, Wenders at peace.",
+"Evil Does Not Exist":"Hamaguchi's eerie rural-ecology drama — meditative then jolting.",
+"Robot Dreams":"A wordless NYC friendship between a dog and a robot — tender and charming.",
+"Exhuma":"Korean shamans and a cursed grave — a slick, propulsive supernatural hit.",
+"Boy Kills World":"Hyper-violent stylized revenge — silly, splashy, exhausting.",
+"The Watchers":"Forest creatures and a glass cage — mood over sense, mixed reviews.",
+"Cure":"Kiyoshi Kurosawa's hypnotic serial-killer dread — a landmark of J-horror.",
+"Come and See (1985)":"A harrowing Belarusian WWII nightmare — one of cinema's most devastating.",
+"Ran — Akira Kurosawa":"Kurosawa's King Lear in feudal Japan — epic, painterly, tragic.",
+"Almost Famous (2000)":"A tender '70s rock coming-of-age — Crowe's beloved, big-hearted charmer.",
+"The Grand Budapest Hotel":"Anderson's whimsical, melancholy concierge caper — meticulous and droll.",
+"Fantastic Mr. Fox":"Anderson's stop-motion Dahl heist — witty, warm, handcrafted.",
+"Synecdoche, New York":"Kaufman's sprawling meta-meditation on life, theater and decay.",
+"Paris, Texas":"Wenders' aching desert drama of a broken family — a quiet classic.",
+"Threads (1984)":"An unflinching nuclear-war docudrama — bleak and unforgettable.",
+"28 Weeks Later":"A brutal rage-virus sequel — tense, grim, propulsive.",
+"Eastern Promises":"Cronenberg's cold London-mob thriller — bloody, precise, great Mortensen.",
+"Silence":"Scorsese's anguished epic of Jesuit faith in Japan — punishing and profound.",
+"Life of Pi":"Ang Lee's castaway-and-tiger spectacle — gorgeous and spiritual.",
+"About Time":"A time-travel rom-com about savoring ordinary days — sweet and sentimental.",
+"Midnight In Paris":"A nostalgic Parisian time-slip — Woody Allen's late-career charmer."
+};
+
+/* music overviews — expandable */
+const OVERVIEW = {
+"Khruangbin":"Houston trio fusing dub, surf and Thai funk into hypnotic, mostly-instrumental grooves.",
+"Lawrence":"Brother-sister-led NYC soul-pop big band — brassy, joyful, road-tested.",
+"Thumpasaurus":"LA funk-punk party band — absurd, infectious, built for live chaos.",
+"Calva Louise":"UK/international alt-rock trio — loud, genre-hopping, heavy on visuals.",
+"Durand Bernarr":"Genre-fluid R&B vocalist and live looper — virtuosic, playful (see his Tiny Desk).",
+"Atarashii Gakko! / Leaders":"Japanese girl group — chaotic retro energy and frantic, iconic choreography.",
+"Cassie Wieland":"Composer blending classical strings and electronics into ambient, emotive pieces.",
+"Exhale Inhale — AURORA":"AURORA: Norwegian art-pop singer — ethereal, witchy, quietly anthemic.",
+"Got Me Started — Troye Sivan":"Troye Sivan: Australian pop star — sleek, queer, dancefloor-leaning.",
+"Iloilo — Billie Eilish":"Billie Eilish: genre-blurring pop phenom — whispery, dark, enormous.",
+'"Dreaming" — T-Pain':"T-Pain: Auto-Tune pioneer and hitmaker who's secretly a powerhouse vocalist.",
+"YOASOBI — The Book III":"YOASOBI: Japanese duo turning short stories into bright J-pop; 'The Book' compiles their singles.",
+"Lose Control — Teddy Swims":"Teddy Swims: soulful pop-R&B belter behind the viral 'Lose Control.'",
+"Dreams — Elephant Gym":"Elephant Gym: Taiwanese math-rock trio — intricate, melodic, bass-forward.",
+"Gustav Holst — The Planets":"An orchestral suite giving each planet a character; 'Jupiter' is the showpiece.",
+"Chopin — Prelude in E Minor":"Op. 28 No. 4 — slow, mournful, famously simple and quietly devastating.",
+"Moonfall — Ichika Nito":"Ichika Nito: Japanese guitarist known for intricate, ambient fingerstyle clips.",
+"Rollin' On — Jackie Venson":"Jackie Venson: Austin blues-rock guitarist and singer — soulful and electric."
+};
+
+/* Play availability (Coming Soon / Available); blank treated as Released */
+const PLAY_AVAIL = {
+"Wyldheart":"Coming Soon","Last Sentinel":"Coming Soon","Nivalis":"Coming Soon","PARALives":"Coming Soon","ONTOS":"Coming Soon","Replaced":"Coming Soon","Stranger Than Heaven":"Coming Soon","Windrose":"Coming Soon","Join Us.":"Coming Soon","Nekome: Nazi Hunter":"Coming Soon","Sol Cesto":"Coming Soon",
+"Emulatorgames.online":"Available","Welcome Home":"Available"
+};
+
+const CAT_LABEL={BR:"Buy / Research",EXP:"Experience",HEAR:"Hear",PLAY:"Play",WATCH:"Watch"};
+const CAT_ORDER=["BR","EXP","HEAR","PLAY","WATCH"];
+const CAT_COLOR={BR:"#E8A33D",EXP:"#37B7A6",HEAR:"#B884E6",PLAY:"#86C96F",WATCH:"#EA6E62"};
+const CAT_HUE={BR:38,EXP:172,HEAR:272,PLAY:108,WATCH:6};
+const STATUS_LABEL={todo:"To-do",done:"Completed",skip:"Skip",priority:"Priority",warning:"Heads-up"};
+const STATUS_FROM={"":"todo",d:"done",x:"skip",p:"priority",w:"warning"};
+const enc=encodeURIComponent;
+function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+
+function parseBase(){
+  return DATA.split("\n").map(l=>l.trim()).filter(Boolean).map(line=>{
+    const f=line.split("|").map(x=>x.trim());
+    const [cat,sub,name,note,url,loc,date,st,tags]=f;
+    let director="",genre="",avail="";
+    if(cat==="WATCH"&&META[name]){const m=META[name].split("|");director=m[0]||"";genre=m[1]||"";avail=m[2]||"";}
+    if(cat==="PLAY")avail=PLAY_AVAIL[name]||"Released";
+    const status=STATUS_FROM[st||""]||"todo";
+    const wasDone=status==="done";
+    return {id:cat+":"+slug(name),cat,sub,name,note:note||"",url:url||"",loc:loc||"",date:date||"",
+      status:wasDone?"todo":status,
+      done:wasDone,score:null,opinion:"",playState:(cat==="PLAY"&&wasDone)?"played":"none",
+      tags:(tags||"").split(",").map(t=>t.trim()).filter(Boolean),
+      director,genre,avail,onSale:false,custom:false};
+  });
+}
+const CONTACTS=[
+  {name:"@americanfille",note:"Creator of the French & Americans PDF",where:"Instagram"},
+  {name:"@thenextfunthing",note:"Events / things-to-do account",where:"Instagram"},
+  {name:"Helen Huang",note:"generalist.world — ORANGE / Trove",where:"generalist.world"},
+  {name:"Joyce Lee",note:"Photographer — Baron book",where:"baronbooks.co.uk"},
+  {name:"Brennan Lee Mulligan",note:"A World Beyond Numbers TTRPG creator",where:"—"}
+];
+
+const KEY="tix-data-v5";
+let items;
+function load(){
+  try{const s=JSON.parse(localStorage.getItem("tix-data-v5"));if(Array.isArray(s)&&s.length){items=s;return;}}catch(e){}
+  try{const s=JSON.parse(sessionStorage.getItem("tix-data-v5"));if(Array.isArray(s)&&s.length){items=s;return;}}catch(e){}
+  items=parseBase();
+  try{const prev=JSON.parse(localStorage.getItem("tix-data-v4"));
+    if(Array.isArray(prev)&&prev.length){
+      const byId={};items.forEach(it=>byId[it.id]=it);
+      prev.forEach(o=>{const cur=byId[o.id];
+        const graded=o.done||o.score||(o.opinion&&o.opinion!=="")||(o.playState&&o.playState!=="none")||o.onSale;
+        if(cur){if(graded){cur.done=!!o.done;cur.score=(o.score!==undefined?o.score:null);cur.opinion=o.opinion||"";cur.playState=o.playState||"none";cur.onSale=!!o.onSale;}}
+        else if(o.custom){items.unshift(o);}
+      });
+    }
+  }catch(e){}
+  save();
+}
+let storageOK=true,unsaved=0,lastExport=null;
+function flagNoStorage(){storageOK=false;paintWarn();}
+function paintWarn(){
+  const w=document.getElementById("warnbar");if(!w)return;
+  const cnt=document.getElementById("warnCount");
+  if(!storageOK){w.classList.add("show");if(cnt)cnt.textContent=unsaved?` You have ${unsaved} unsaved change${unsaved===1?"":"s"}.`:"";}
+  else w.classList.remove("show");
+}
+function save(){
+  let ok=false;
+  try{localStorage.setItem(KEY,JSON.stringify(items));ok=true;}catch(e){}
+  if(!ok){try{sessionStorage.setItem(KEY,JSON.stringify(items));}catch(e){}}
+  if(!ok){unsaved++;flagNoStorage();}
+  else{unsaved=0;storageOK=true;paintWarn();}
+}
+load();
+
+/* experience type from tags */
+function expType(it){
+  const t=it.tags;
+  if(t.some(x=>["bar","cafe","food"].includes(x)))return"Food";
+  if(t.some(x=>["show","theatre"].includes(x)))return"Shows";
+  if(t.some(x=>["venue","concert"].includes(x)))return"Shows";
+  if(t.some(x=>["immersive","escaperoom","nightlife","arcade","event","oddity"].includes(x)))return"Entertainment";
+  return"Locations";
+}
+
+/* covers */
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return Math.abs(h)}
+function cover(it){
+  const h=hashStr(it.name),base=CAT_HUE[it.cat];
+  const h1=(base+(h%34)-17+360)%360,h2=(h1+24+(h%26))%360;
+  return `linear-gradient(140deg,hsl(${h1} 52% 27%),hsl(${h2} 58% 15%))`;
+}
+function motif(it){
+  const t=it.tags.join(" ");
+  if(it.cat==="WATCH"){
+    const g=(it.genre||"").toLowerCase(),s=it.sub;
+    if(s==="TV & Series")return["📺","🎞️"];
+    if(s==="Documentaries")return["🎥","📰"];
+    if(s==="Anime")return["🌸","🗾"];
+    if(s==="Short Films")return["🎬","⏱️"];
+    if(s==="Web & YouTube")return["▶️","💻"];
+    if(g==="horror")return["🕯️","🌑"];
+    if(g==="sci-fi")return["🛸","🪐"];
+    if(g==="animation")return["🎨","✨"];
+    if(g==="comedy")return["🎭","🍿"];
+    if(g==="crime"||g==="thriller")return["🕵️","🚬"];
+    if(g==="war")return["⚔️","🎖️"];
+    if(g==="romance")return["💌","🌹"];
+    if(g==="musical"||g==="music")return["🎼","🎤"];
+    if(g==="western")return["🌵","🤠"];
+    if(g==="fantasy")return["🗝️","🦌"];
+    if(g==="biopic")return["🏛️","📖"];
+    if(g==="adventure")return["🧭","⛰️"];
+    if(g==="documentary")return["🎥","📰"];
+    return["🎬","🍿"];
+  }
+  if(it.cat==="HEAR"){
+    if(it.sub==="Albums")return["💿","🎚️"];
+    if(it.sub==="Artists")return["🎤","🎸"];
+    return["🎵","🎧"];
+  }
+  if(it.cat==="PLAY"){
+    if(it.sub==="Board Games")return["🎲","♟️"];
+    if(it.sub==="TTRPG")return["🐉","🎲"];
+    if(it.sub==="ARGs & Interactive")return["🧩","🕸️"];
+    if(it.sub==="Game Resources")return["🕹️","💾"];
+    return["🎮","🕹️"];
+  }
+  if(it.cat==="EXP"){
+    if(/escaperoom/.test(t))return["🔐","🗝️"];
+    if(/bar|cafe/.test(t))return["🍸","🌙"];
+    if(/food/.test(t))return["🍜","🍽️"];
+    if(/museum|art/.test(t))return["🖼️","🎨"];
+    if(/immersive/.test(t))return["✨","🪞"];
+    if(/hike|outdoors/.test(t))return["🏔️","🌲"];
+    if(/thrift|shop/.test(t))return["🛍️","🧵"];
+    if(/music|venue|concert/.test(t))return["🎶","🎡"];
+    if(/theatre|show/.test(t))return["🎭","🎪"];
+    if(/hotel|getaway/.test(t))return["🏨","🌴"];
+    if(/book/.test(t))return["📚","☕"];
+    if(/nightlife/.test(t))return["🪩","🌃"];
+    if(/architecture/.test(t))return["🏛️","🌇"];
+    if(it.sub==="International")return["🌍","✈️"];
+    if(it.sub==="Travel")return["✈️","🧳"];
+    return["📍","🗺️"];
+  }
+  const s=it.sub;
+  if(s==="Wear & Fragrance")return["🧴","👔"];
+  if(s==="Tools & Software")return["🖥️","🛠️"];
+  if(s==="Gear & Objects")return[/lego|toy/.test(t)?"🧱":"📦","🔧"];
+  if(s==="Food & Drink")return["🥬","🍫"];
+  if(s==="Read & Learn")return["📚","✒️"];
+  if(s==="Money & Work")return["💼","📈"];
+  if(s==="Studios, Orgs & Causes")return["🏢","🎞️"];
+  if(s==="Media & Streaming")return["📺","🛰️"];
+  return["🔎","✨"];
+}
+
+/* links */
+function links(it){
+  const out=[],base=(it.name.replace(/\([^)]*\)/g,"").replace(/—.*/,"").trim()||it.name);
+  if(it.url)out.push({u:it.url,l:"Official site"});
+  if(it.cat==="HEAR"){out.push({u:"https://open.spotify.com/search/"+enc(it.name.replace(/—/g," ")),l:"Spotify"});out.push({u:"https://www.youtube.com/results?search_query="+enc(it.name.replace(/—/g," ")),l:"YouTube"});}
+  else if(it.cat==="WATCH"){out.push({u:"https://www.imdb.com/find/?q="+enc(base)+"&s=tt",l:"IMDb · rating"});out.push({u:"https://letterboxd.com/search/films/"+enc(base)+"/",l:"Letterboxd"});out.push({u:"https://www.justwatch.com/us/search?q="+enc(base),l:"Where to watch"});}
+  else if(it.cat==="PLAY"){const t=it.tags.join(" ");
+    if(it.sub==="Board Games"||/\bboard\b/.test(t))out.push({u:"https://boardgamegeek.com/geeksearch.php?action=search&objecttype=boardgame&q="+enc(base),l:"BoardGameGeek"});
+    else if(it.sub==="TTRPG"||/ttrpg/.test(t))out.push({u:"https://www.google.com/search?q="+enc(base+" tabletop rpg publisher"),l:"Find publisher"});
+    else if(it.sub==="Video Games"){out.push({u:"https://store.steampowered.com/search/?term="+enc(base),l:"Steam"});out.push({u:"https://isthereanydeal.com/search/?q="+enc(base),l:"Check deals"});}
+    else out.push({u:"https://www.google.com/search?q="+enc(base+" game"),l:"Web"});}
+  else if(it.cat==="EXP"){out.push({u:"https://www.google.com/search?q="+enc(base+" "+(it.loc||"")),l:"Search"});out.push({u:"https://www.google.com/maps/search/"+enc(base+" "+(it.loc||"")),l:"Maps"});}
+  else if(!it.url)out.push({u:"https://www.google.com/search?q="+enc(base),l:"Web"});
+  return out;
+}
+
+/* state */
+let activeCat="ALL",activeView=null,statusFilter="all",showHandled=false,activeTag=null,term="";
+let mode="rows",wGenre="all",wAvail="all",wDir="",expFilter="all",playAvail="all",playSale=false,playEng="all",hearOp="all",brOp="all";
+let gridShown=36;
+
+function isDone(it){if(it.cat==="PLAY")return it.playState==="played";if(it.cat==="HEAR")return !!it.opinion;return !!it.done;}
+function dispStatus(it){if(it.status==="skip")return"skip";if(isDone(it))return"done";return it.status;}
+function matchStatus(it){
+  if(statusFilter==="all")return true;
+  if(statusFilter==="done")return isDone(it);
+  if(statusFilter==="skip")return it.status==="skip";
+  if(statusFilter==="priority")return it.status==="priority";
+  if(statusFilter==="warning")return it.status==="warning";
+  if(statusFilter==="todo")return !isDone(it)&&it.status==="todo";
+  return true;
+}
+function visibleSet(){
+  const searching=!!term;
+  return items.filter(it=>{
+    if(searching){
+      const hay=(it.name+" "+it.note+" "+it.loc+" "+it.sub+" "+it.director+" "+it.genre+" "+it.avail+" "+it.tags.join(" ")).toLowerCase();
+      if(!hay.includes(term))return false;
+      if(statusFilter!=="all"&&!matchStatus(it))return false;
+      return true;
+    }
+    if(activeCat!=="ALL"&&it.cat!==activeCat)return false;
+    if(activeTag&&!it.tags.includes(activeTag))return false;
+    if(activeCat==="WATCH"){if(wGenre!=="all"&&it.genre!==wGenre)return false;if(wAvail!=="all"&&(it.avail||"")!==wAvail)return false;if(wDir&&!(it.director||"").toLowerCase().includes(wDir))return false;}
+    if(activeCat==="EXP"&&expFilter!=="all"&&expType(it)!==expFilter)return false;
+    if(activeCat==="PLAY"){if(playAvail!=="all"&&(it.avail||"Released")!==playAvail)return false;if(playSale&&!it.onSale)return false;if(playEng!=="all"&&it.playState!==playEng)return false;}
+    if(activeCat==="HEAR"&&hearOp!=="all"&&it.opinion!==hearOp)return false;
+    if(activeCat==="BR"&&brOp!=="all"&&it.opinion!==brOp)return false;
+    if(!matchStatus(it))return false;
+    if(!showHandled&&statusFilter!=="done"&&statusFilter!=="skip"){if(isDone(it)||it.status==="skip")return false;}
+    return true;
+  });
+}
+
+/* sidebar */
+function renderNav(){
+  const counts={ALL:items.length};CAT_ORDER.forEach(c=>counts[c]=items.filter(i=>i.cat===c).length);
+  const cats=[["ALL","All entries",null],...CAT_ORDER.map(c=>[c,CAT_LABEL[c],CAT_COLOR[c]])];
+  document.getElementById("nav-cats").innerHTML=cats.map(([c,l,col])=>{
+    const on=(activeView===null&&activeCat===c)?"active":"";
+    const dot=col?`<span class="nd" style="background:${col}"></span>`:`<span class="nd"></span>`;
+    return `<button class="nav-item ${on}" data-cat="${c}" style="${on&&col?`border-left-color:${col}`:""}"><span class="lbl">${dot}${l}</span><span class="ct">${counts[c]}</span></button>`;}).join("");
+  const linkCt=items.filter(i=>i.url).length,dateCt=items.filter(i=>i.date).length;
+  document.getElementById("nav-views").innerHTML=[["links","Links",linkCt],["dates","Dates",dateCt],["people","People",CONTACTS.length]].map(([v,l,ct])=>{
+    const on=activeView===v?"active":"";return `<button class="nav-item ${on}" data-view="${v}"><span class="lbl"><span class="nd"></span>${l}</span><span class="ct">${ct}</span></button>`;}).join("");
+  document.getElementById("legend").innerHTML=Object.entries(STATUS_LABEL).map(([k,l])=>`<div class="row"><span class="dot ${k}"></span>${l}</div>`).join("");
+  // quick-add catalog options
+  const qa=document.getElementById("qaCat");const cur=qa.value;
+  qa.innerHTML=CAT_ORDER.map(c=>`<option value="${c}">${CAT_LABEL[c]}</option>`).join("");
+  qa.value=(activeView===null&&activeCat!=="ALL")?activeCat:(cur||"WATCH");
+}
+
+/* chips + facets */
+function renderChips(){
+  const opts=[["all","All"],["todo","To-do"],["done","Completed"],["priority","Priority"],["warning","Heads-up"],["skip","Skip"]];
+  document.getElementById("statusChips").innerHTML=opts.map(([k,l])=>{const d=k==="all"?"":`<span class="dot ${k}"></span>`;return `<button class="chip ${statusFilter===k?"on":""}" data-status="${k}">${d}${l}</button>`;}).join("")+
+    `<span class="grow"></span><label class="toggle"><input type="checkbox" id="showHandled" ${showHandled?"checked":""}/> Show completed &amp; skipped</label>`;
+}
+function renderFacets(){
+  const box=document.getElementById("facets");
+  if(activeView||activeCat==="ALL"||term){box.style.display="none";box.innerHTML="";return;}
+  box.style.display="flex";let html="";
+  if(activeCat==="WATCH"){
+    const w=items.filter(i=>i.cat==="WATCH");
+    const genres=[...new Set(w.map(i=>i.genre).filter(Boolean))].sort();
+    const avails=[...new Set(w.map(i=>i.avail||"").filter(Boolean))].sort();
+    const dirs=[...new Set(w.map(i=>i.director).filter(Boolean))].sort();
+    html=`<label>Genre</label><select id="wG"><option value="all">All</option>${genres.map(g=>`<option ${wGenre===g?"selected":""}>${g}</option>`).join("")}</select>`+
+      `<label>Status</label><select id="wA"><option value="all">All</option><option value="" ${wAvail===""?"selected":""}>Released</option>${avails.map(a=>`<option value="${a}" ${wAvail===a?"selected":""}>${a}</option>`).join("")}</select>`+
+      `<label>Director</label><input id="wD" list="dl" placeholder="Type a name…" value="${esc(wDir)}"><datalist id="dl">${dirs.map(d=>`<option value="${esc(d)}">`).join("")}</datalist>`;
+  }else if(activeCat==="EXP"){
+    html=["all","Food","Entertainment","Shows","Locations"].map(t=>`<button class="chip ${expFilter===t?"on":""}" data-exp="${t}">${t==="all"?"All":t}</button>`).join("");
+  }else if(activeCat==="PLAY"){
+    html=["all","Released","Coming Soon","Available"].map(t=>`<button class="chip ${playAvail===t?"on":""}" data-pa="${t}">${t==="all"?"All":t}</button>`).join("")+
+      `<span style="width:10px"></span>`+
+      [["all","Any"],["wishlisted","★ Wishlisted"],["played","✓ Played"]].map(([v,l])=>`<button class="chip ${playEng===v?"on":""}" data-pe="${v}">${l}</button>`).join("")+
+      `<button class="chip ${playSale?"on":""}" data-sale><span class="dot done"></span>On sale</button>`;
+  }else if(activeCat==="HEAR"){
+    html=[["all","All"],["like","👍 Liked"],["neutral","😐 Neutral"],["dislike","👎 Disliked"]].map(([v,l])=>`<button class="chip ${hearOp===v?"on":""}" data-ho="${v}">${l}</button>`).join("");
+  }else if(activeCat==="BR"){
+    html=[["all","All"],["like","👍 Liked"],["dislike","👎 Disliked"]].map(([v,l])=>`<button class="chip ${brOp===v?"on":""}" data-bo="${v}">${l}</button>`).join("");
+  }
+  box.innerHTML=html;
+}
+function renderTagbar(){document.getElementById("tagbar").innerHTML=activeTag?`<span class="activetag">tag <b>#${activeTag}</b><button id="clearTag">×</button></span>`:"";}
+
+/* tile */
+function snippet(it){
+  let s="";
+  if(it.cat==="WATCH")s=LOGLINE[it.name]||it.note||[it.director,it.genre].filter(Boolean).join(" · ");
+  else if(it.cat==="HEAR")s=OVERVIEW[it.name]||it.note||it.sub;
+  else s=it.note||[it.loc,it.sub].filter(Boolean).join(" · ");
+  return s||"";
+}
+function engBadge(it){
+  if(it.cat==="WATCH")return it.done?`<span class="ebadge">${it.score?it.score+"/10":"✓"}</span>`:"";
+  if(it.cat==="HEAR"){if(it.opinion==="like")return `<span class="ebadge like">♥</span>`;if(it.opinion==="dislike")return `<span class="ebadge dis">✕</span>`;if(it.opinion==="neutral")return `<span class="ebadge">~</span>`;return"";}
+  if(it.cat==="PLAY"){if(it.playState==="played")return `<span class="ebadge">✓</span>`;if(it.playState==="wishlisted")return `<span class="ebadge wish">★</span>`;return"";}
+  if(it.cat==="BR"){let b=it.done?`<span class="ebadge">✓</span>`:"";if(it.opinion==="like")b+=`<span class="ebadge like">♥</span>`;if(it.opinion==="dislike")b+=`<span class="ebadge dis">✕</span>`;return b;}
+  return it.done?`<span class="ebadge">✓</span>`:"";
+}
+function cardChips(it){
+  const c=[];
+  if(it.cat==="WATCH"&&it.genre)c.push(`<button class="cchip" data-genre="${esc(it.genre)}">${esc(it.genre)}</button>`);
+  if(it.cat==="EXP")c.push(`<button class="cchip" data-exp="${expType(it)}">${expType(it)}</button>`);
+  it.tags.slice(0,2).forEach(t=>c.push(`<button class="cchip" data-tag="${esc(t)}">#${esc(t)}</button>`));
+  return c.join("");
+}
+function tileHTML(it){
+  const ds=dispStatus(it),cls=ds==="skip"?"skip":"";
+  const snip=esc(snippet(it)),chips=cardChips(it),mo=motif(it);
+  return `<div class="tile ${cls}" data-open="${it.id}">
+    <span class="cover-grad" style="background:${cover(it)}"></span>
+    <span class="cover-art"><span class="wash"></span><span class="glyph2">${mo[1]}</span><span class="glyph">${mo[0]}</span></span>
+    <span class="cover-cat">${CAT_LABEL[it.cat].replace(" / "," ")}</span>
+    <span class="cover-dot dot ${ds}"></span>${engBadge(it)}
+    <div class="cover-info">
+      <div class="cover-title">${esc(it.name)}</div>
+      ${snip?`<div class="cover-snip">${snip}</div>`:""}
+      ${chips?`<div class="cover-chips">${chips}</div>`:""}
+    </div>
+  </div>`;
+}
+
+/* renderers */
+function renderRows(list){
+  const c=document.getElementById("content");
+  if(!list.length)return empty(c);
+  let groups;
+  if(activeCat==="ALL"||term)groups=CAT_ORDER.map(cat=>[CAT_LABEL[cat],list.filter(i=>i.cat===cat),CAT_COLOR[cat]]).filter(g=>g[1].length);
+  else{const m=new Map();list.forEach(it=>{if(!m.has(it.sub))m.set(it.sub,[]);m.get(it.sub).push(it)});groups=[...m.entries()].map(([s,a])=>[s,a,CAT_COLOR[activeCat]]);}
+  c.innerHTML=groups.map(([title,arr,col])=>`<section class="row-sec"><div class="row-head"><span class="rt" style="--c:${col}">${esc(title)}</span><span class="rc">${arr.length}</span></div><div class="strip">${arr.map(tileHTML).join("")}</div></section>`).join("");
+}
+function renderGrid(list){
+  const c=document.getElementById("content");
+  if(!list.length)return empty(c);
+  const slice=list.slice(0,gridShown);
+  c.innerHTML=`<div class="grid">${slice.map(tileHTML).join("")}</div>`+(list.length>gridShown?`<div class="scroll-more" id="more">scroll for ${list.length-gridShown} more…</div>`:"");
+}
+function renderList(list){
+  const c=document.getElementById("content");if(!list.length)return empty(c);
+  const row=it=>{const ds=dispStatus(it),cls=ds==="done"?"done":(ds==="skip"?"skip":"");const lk=links(it)[0];
+    return `<div class="item ${cls}"><input class="check" type="checkbox" data-id="${it.id}" ${isDone(it)?"checked":""}/><div class="body"><div class="name" data-open="${it.id}">${esc(it.name)}</div>${it.note?`<div class="note">${esc(it.note)}</div>`:""}<div class="meta">${metaPills(it)}</div></div><div class="rowtools"><a href="${lk.u}" target="_blank" rel="noopener">${lk.l} ↗</a></div></div>`;};
+  let groups;
+  if(activeCat==="ALL"||term)groups=CAT_ORDER.map(cat=>[CAT_LABEL[cat],list.filter(i=>i.cat===cat)]).filter(g=>g[1].length);
+  else{const m=new Map();list.forEach(it=>{if(!m.has(it.sub))m.set(it.sub,[]);m.get(it.sub).push(it)});groups=[...m.entries()];}
+  c.innerHTML=groups.map(([t,a])=>`<section class="group"><div class="group-head"><span class="gt">${esc(t)}</span><span class="gc">${a.length}</span></div><div class="items">${a.map(row).join("")}</div></section>`).join("");
+}
+function metaPills(it){let m="";
+  if(it.director)m+=`<span class="pill dir">${esc(it.director)}</span>`;
+  if(it.genre)m+=`<span class="pill">${esc(it.genre)}</span>`;
+  if(it.cat==="EXP")m+=`<span class="pill">${expType(it)}</span>`;
+  if(it.avail&&it.avail!=="Released")m+=`<span class="pill up">${esc(it.avail)}</span>`;
+  if(it.onSale)m+=`<span class="pill sale">on sale</span>`;
+  if(it.loc)m+=`<span class="pill loc">${esc(it.loc)}</span>`;
+  if(it.date)m+=`<span class="pill date">${esc(it.date)}</span>`;
+  if(it.status==="priority")m+=`<span class="pill star">★ priority</span>`;
+  if(it.status==="warning")m+=`<span class="pill flag">‼ heads-up</span>`;
+  it.tags.forEach(t=>m+=`<span class="pill tag" data-tag="${esc(t)}">#${esc(t)}</span>`);
+  return m;}
+function empty(c){c.innerHTML=`<div class="empty"><b>Nothing here yet</b>Clear a filter or the search box.</div>`;}
+
+/* special views */
+function renderSpecial(){
+  const c=document.getElementById("content");document.getElementById("statbar").innerHTML="";document.getElementById("facets").style.display="none";
+  if(activeView==="people"){setTitle("People",CONTACTS.length+" handles · most notes have no contact",null);
+    c.innerHTML=`<div class="grid">`+CONTACTS.map(p=>`<div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px"><div style="font-family:var(--serif);font-size:17px">${esc(p.name)}</div><div class="note">${esc(p.note)}</div><div class="meta"><span class="pill loc">${esc(p.where)}</span></div></div>`).join("")+`</div>`;return;}
+  const list=activeView==="links"?items.filter(i=>i.url):items.filter(i=>i.date).sort((a,b)=>monthKey(a.date)-monthKey(b.date));
+  setTitle(activeView==="links"?"Links":"Dates",list.length+(activeView==="links"?" saved URLs":" dated entries"),null);
+  const row=it=>{const lk=links(it)[0];return `<div class="item"><span></span><div class="body"><div class="name" data-open="${it.id}">${esc(it.name)}</div><div class="meta">${metaPills(it)}</div></div><div class="rowtools"><a href="${lk.u}" target="_blank" rel="noopener">${lk.l} ↗</a></div></div>`;};
+  if(activeView==="links")c.innerHTML=CAT_ORDER.map(cat=>{const a=list.filter(i=>i.cat===cat);return a.length?`<section class="group"><div class="group-head"><span class="gt">${CAT_LABEL[cat]}</span><span class="gc">${a.length}</span></div><div class="items">${a.map(row).join("")}</div></section>`:"";}).join("");
+  else c.innerHTML=`<section class="group"><div class="items">${list.map(row).join("")}</div></section>`;
+}
+function monthKey(d){const m={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};const lo=d.toLowerCase();for(const k in m)if(lo.includes(k))return m[k];const s=d.match(/(\d{1,2})\/(\d{1,2})/);return s?+s[1]:99;}
+function setTitle(t,m,col){document.getElementById("viewTitle").innerHTML=(col?`<span class="tick" style="background:${col}"></span>`:"")+esc(t);document.getElementById("viewMeta").textContent=m;}
+
+function renderContent(){
+  renderFacets();
+  document.getElementById("quickadd").style.display=(activeView||term)?"none":"flex";
+  if(activeView&&!term){renderSpecial();return;}
+  const list=visibleSet();
+  if(term){setTitle("Search","“"+term+"” · "+list.length+" result"+(list.length===1?"":"s")+" across the index","#E8A33D");document.getElementById("statbar").innerHTML="";}
+  else{
+    setTitle(activeCat==="ALL"?"All entries":CAT_LABEL[activeCat],`${list.length} shown · ${(activeCat==="ALL"?items:items.filter(i=>i.cat===activeCat)).length} total`,activeCat==="ALL"?"#E8A33D":CAT_COLOR[activeCat]);
+    const scope=activeCat==="ALL"?items:items.filter(i=>i.cat===activeCat);
+    document.getElementById("statbar").innerHTML=`<span><b>${scope.length}</b> entries</span><span><b>${scope.filter(i=>!isDone(i)&&i.status==="todo").length}</b> to-do</span><span><b>${scope.filter(i=>isDone(i)).length}</b> completed</span>`;
+  }
+  if(mode==="rows")renderRows(list);else if(mode==="grid")renderGrid(list);else renderList(list);
+}
+function render(){renderNav();renderChips();renderTagbar();renderContent();}
+
+/* detail */
+const detail=document.getElementById("detail");
+function engControls(it){
+  if(it.cat==="WATCH"){
+    const sc=[1,2,3,4,5,6,7,8,9,10].map(n=>`<button class="sc ${it.score===n?"on":""}" data-score="${n}">${n}</button>`).join("");
+    return `<button class="ebtn ${it.done?"on":""}" data-eng="watched" data-id="${it.id}">${it.done?"✓ Watched":"Mark watched"}</button>
+      <div class="scorebar"><span class="lbl2">Rating / 10</span>${sc}</div>`;
+  }
+  if(it.cat==="HEAR")return `<div class="eg3">
+    <button class="ebtn like ${it.opinion==="like"?"on":""}" data-eng="like" data-id="${it.id}">👍 Like</button>
+    <button class="ebtn ${it.opinion==="neutral"?"on":""}" data-eng="neutral" data-id="${it.id}">😐 Neutral</button>
+    <button class="ebtn dis ${it.opinion==="dislike"?"on":""}" data-eng="dislike" data-id="${it.id}">👎 Dislike</button></div>`;
+  if(it.cat==="PLAY")return `<div class="eg3">
+    <button class="ebtn ${it.playState==="wishlisted"?"on":""}" data-eng="wishlisted" data-id="${it.id}">★ Wishlisted</button>
+    <button class="ebtn ${it.playState==="played"?"on":""}" data-eng="played" data-id="${it.id}">✓ Played</button></div>`;
+  if(it.cat==="BR")return `<button class="ebtn ${it.done?"on":""}" data-eng="done" data-id="${it.id}">${it.done?"✓ Completed":"Mark completed"}</button>
+    <div class="eg3"><button class="ebtn like ${it.opinion==="like"?"on":""}" data-eng="like" data-id="${it.id}">👍 Like</button>
+    <button class="ebtn dis ${it.opinion==="dislike"?"on":""}" data-eng="dislike" data-id="${it.id}">👎 Dislike</button></div>`;
+  return `<button class="ebtn ${it.done?"on":""}" data-eng="done" data-id="${it.id}">${it.done?"✓ Completed":"Mark completed"}</button>`;
+}
+function applyEng(id,kind){const it=items.find(i=>i.id===id);if(!it)return;
+  if(kind==="watched")  {it.done=!it.done;if(!it.done)it.score=null;}
+  else if(kind==="done"){it.done=!it.done;}
+  else if(kind==="played")    {it.playState=it.playState==="played"?"none":"played";}
+  else if(kind==="wishlisted"){it.playState=it.playState==="wishlisted"?"none":"wishlisted";}
+  else if(["like","dislike","neutral"].includes(kind)){it.opinion=it.opinion===kind?"":kind;}
+  save();openDetail(id);renderContent();renderNav();
+}
+function setScore(id,n){const it=items.find(i=>i.id===id);if(!it)return;it.score=(it.score===n?null:n);if(it.score)it.done=true;save();openDetail(id);renderContent();renderNav();}
+function toggleDone(it,val){if(it.cat==="PLAY")it.playState=val?"played":"none";else if(it.cat==="HEAR")it.opinion=val?"neutral":"";else it.done=val;}
+function openDetail(id){
+  const it=items.find(i=>i.id===id);if(!it)return;
+  const ds=dispStatus(it),lk=links(it);
+  const desc=it.cat==="WATCH"?LOGLINE[it.name]:(it.cat==="HEAR"?OVERVIEW[it.name]:"");
+  document.getElementById("detailSheet").innerHTML=`
+    <div class="detail-cover" style="background:${cover(it)}"><span class="cover-art"><span class="wash"></span><span class="glyph">${motif(it)[0]}</span></span><span class="dc-cat">${CAT_LABEL[it.cat]} · ${esc(it.sub)}</span><span class="dc-title">${esc(it.name)}</span></div>
+    <div class="detail-body">
+      <div class="sub"><span class="dot ${ds}" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>${STATUS_LABEL[ds]||"To-do"}${it.cat==="EXP"?" · "+expType(it):""}</div>
+      ${desc?`<div class="logline">${esc(desc)}</div>`:""}
+      ${it.note?`<div class="dnote">${esc(it.note)}</div>`:""}
+      <div class="meta">${metaPills(it)}</div>
+      <div class="engage">${engControls(it)}</div>
+      <div class="linkrow">${lk.map((l,i)=>`<a class="linkbtn ${i?"sec":""}" href="${l.u}" target="_blank" rel="noopener">↗ ${l.l}</a>`).join("")}</div>
+      <div class="detail-actions">
+        <span class="grow"></span>
+        <button class="iconbtn" data-edit="${it.id}">Edit</button>
+        <button class="iconbtn" id="closeDetail">Close</button>
+      </div>
+    </div>`;
+  detail.classList.add("open");
+}
+function closeDetail(){detail.classList.remove("open");}
+
+/* editor */
+const editor=document.getElementById("editor");
+function syncExtra(){const cat=document.getElementById("f-cat").value;
+  document.getElementById("ex-watch").style.display=cat==="WATCH"?"block":"none";
+  document.getElementById("ex-avail").style.display=(cat==="WATCH"||cat==="PLAY")?"block":"none";
+  document.getElementById("ex-sale").style.display=cat==="PLAY"?"block":"none";
+  const subs=[...new Set(items.filter(i=>i.cat===cat).map(i=>i.sub))].sort();
+  document.getElementById("sublist").innerHTML=subs.map(s=>`<option value="${esc(s)}">`).join("");
+  const genres=[...new Set(items.filter(i=>i.cat==="WATCH").map(i=>i.genre).filter(Boolean))].sort();
+  document.getElementById("genrelist").innerHTML=genres.map(g=>`<option value="${g}">`).join("");
+}
+function openEditor(id,preName,preCat){
+  const it=id?items.find(i=>i.id===id):null;
+  document.getElementById("edTitle").textContent=it?"Edit entry":"Add an entry";
+  document.getElementById("f-id").value=it?it.id:"";
+  document.getElementById("f-name").value=it?it.name:(preName||"");
+  document.getElementById("f-cat").value=it?it.cat:(preCat||(activeCat!=="ALL"?activeCat:"WATCH"));
+  document.getElementById("f-sub").value=it?it.sub:"";
+  document.getElementById("f-note").value=it?it.note:"";
+  document.getElementById("f-url").value=it?it.url:"";
+  document.getElementById("f-loc").value=it?it.loc:"";
+  document.getElementById("f-date").value=it?it.date:"";
+  document.getElementById("f-status").value=it?it.status:"todo";
+  document.getElementById("f-tags").value=it?it.tags.join(", "):"";
+  document.getElementById("f-dir").value=it?it.director:"";
+  document.getElementById("f-genre").value=it?it.genre:"";
+  document.getElementById("f-avail").value=it?(it.avail||""):"";
+  document.getElementById("f-sale").checked=it?!!it.onSale:false;
+  document.getElementById("deleteBtn").style.display=it?"inline-flex":"none";
+  syncExtra();closeDetail();editor.classList.add("open");
+  if(!it)setTimeout(()=>document.getElementById("f-name").focus(),30);
+}
+function closeEditor(){editor.classList.remove("open");}
+function saveEntry(){
+  const name=document.getElementById("f-name").value.trim();if(!name){document.getElementById("f-name").focus();return;}
+  const cat=document.getElementById("f-cat").value;
+  const obj={cat,sub:document.getElementById("f-sub").value.trim()||"Misc",name,
+    note:document.getElementById("f-note").value.trim(),url:document.getElementById("f-url").value.trim(),
+    loc:document.getElementById("f-loc").value.trim(),date:document.getElementById("f-date").value.trim(),
+    status:document.getElementById("f-status").value,
+    tags:document.getElementById("f-tags").value.split(",").map(t=>t.trim()).filter(Boolean),
+    director:document.getElementById("f-dir").value.trim(),genre:document.getElementById("f-genre").value.trim(),
+    avail:document.getElementById("f-avail").value,onSale:document.getElementById("f-sale").checked,custom:true};
+  const id=document.getElementById("f-id").value;
+  if(id){Object.assign(items.find(i=>i.id===id),obj);}else{obj.id=cat+":"+slug(name)+":"+Date.now().toString(36);obj.done=false;obj.score=null;obj.opinion="";obj.playState="none";items.unshift(obj);}
+  save();closeEditor();render();
+}
+function quickAdd(){const name=document.getElementById("qaName").value.trim();if(!name)return;
+  const cat=document.getElementById("qaCat").value;
+  items.unshift({id:cat+":"+slug(name)+":"+Date.now().toString(36),cat,sub:"Misc",name,note:"",url:"",loc:"",date:"",status:"todo",tags:[],director:"",genre:"",avail:cat==="PLAY"?"Released":"",onSale:false,done:false,score:null,opinion:"",playState:"none",custom:true});
+  document.getElementById("qaName").value="";save();render();}
+
+/* export/import */
+function exportData(){
+  try{
+    const payload=JSON.stringify(items,null,2);
+    const blob=new Blob([payload],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    const d=new Date(),p=n=>String(n).padStart(2,"0");
+    a.download=`the-index-${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    unsaved=0;lastExport=new Date();paintWarn();
+    const w=document.getElementById("warnbar");
+    if(w&&!storageOK){const c=document.getElementById("warnCount");
+      if(c)c.textContent=" Backup saved — keep this file to restore later.";}
+  }catch(e){alert("Couldn't create the backup file. Try again, or use a different browser.");}
+}
+function importData(file){
+  const r=new FileReader();
+  r.onerror=()=>alert("Couldn't read that file.");
+  r.onload=()=>{
+    let d;
+    try{d=JSON.parse(r.result);}catch(e){alert("That file isn't valid Index data (couldn't read it as JSON). Nothing was changed.");return;}
+    if(!Array.isArray(d)||!d.length){alert("That file doesn't look like an Index backup. Nothing was changed.");return;}
+    const good=d.filter(o=>o&&typeof o.name==="string"&&typeof o.cat==="string"&&CAT_ORDER.includes(o.cat));
+    if(!good.length){alert("No usable entries found in that file. Nothing was changed.");return;}
+    const graded=good.filter(o=>o.done||o.score||(o.opinion&&o.opinion!=="")||(o.playState&&o.playState!=="none")).length;
+    if(!confirm(`Import ${good.length} entries (${graded} graded)?\n\nThis replaces what's currently loaded (${items.length} entries).\nYour current set will be downloaded as a backup first.`))return;
+    try{exportData();}catch(e){}
+    good.forEach(o=>{
+      if(o.done===undefined)o.done=false;
+      if(o.score===undefined)o.score=null;
+      if(o.opinion===undefined)o.opinion="";
+      if(o.playState===undefined)o.playState="none";
+      if(!Array.isArray(o.tags))o.tags=[];
+      if(!o.id)o.id=o.cat+":"+slug(o.name)+":"+Math.random().toString(36).slice(2);
+    });
+    items=good;save();render();
+    alert(`Imported ${good.length} entries.`);
+  };
+  r.readAsText(file);
+}
+function reallyReset(){
+  if(!confirm("Reset to the original imported notes?\n\nThis clears every grade, rating and entry you've added.\nA backup of your current data will be downloaded first."))return;
+  try{exportData();}catch(e){}
+  if(!confirm("Backup saved. Reset now?"))return;
+  try{localStorage.removeItem(KEY);}catch(e){}
+  try{sessionStorage.removeItem(KEY);}catch(e){}
+  items=parseBase();save();render();
+}
+
+/* events */
+document.addEventListener("click",e=>{
+  const cc=e.target.closest(".cchip");if(cc){
+    if(cc.dataset.genre){activeCat="WATCH";activeView=null;wGenre=cc.dataset.genre;}
+    else if(cc.dataset.exp){activeCat="EXP";activeView=null;expFilter=cc.dataset.exp;}
+    else if(cc.dataset.tag){activeTag=cc.dataset.tag;activeView=null;}
+    closeDetail();gridShown=36;render();window.scrollTo({top:0,behavior:"smooth"});return;
+  }
+  const op=e.target.closest("[data-open]");if(op){openDetail(op.dataset.open);return;}
+  const cat=e.target.closest("[data-cat]");if(cat){activeCat=cat.dataset.cat;activeView=null;gridShown=36;closeMenu();render();return;}
+  const view=e.target.closest("[data-view]");if(view){activeView=view.dataset.view;closeMenu();render();return;}
+  const ch=e.target.closest("[data-status]");if(ch){statusFilter=ch.dataset.status;gridShown=36;render();return;}
+  const md=e.target.closest("#modeSeg [data-mode]");if(md){mode=md.dataset.mode;[...document.querySelectorAll("#modeSeg button")].forEach(b=>b.classList.toggle("on",b===md));gridShown=36;renderContent();return;}
+  const ex=e.target.closest("[data-exp]");if(ex){activeCat="EXP";activeView=null;expFilter=ex.dataset.exp;closeDetail();gridShown=36;render();window.scrollTo({top:0,behavior:"smooth"});return;}
+  const gch=e.target.closest("[data-genre]");if(gch){activeCat="WATCH";activeView=null;wGenre=gch.dataset.genre;closeDetail();gridShown=36;render();window.scrollTo({top:0,behavior:"smooth"});return;}
+  const peb=e.target.closest("[data-pe]");if(peb){playEng=peb.dataset.pe;gridShown=36;renderContent();renderFacets();return;}
+  const hob=e.target.closest("[data-ho]");if(hob){hearOp=hob.dataset.ho;gridShown=36;renderContent();renderFacets();return;}
+  const bob=e.target.closest("[data-bo]");if(bob){brOp=bob.dataset.bo;gridShown=36;renderContent();renderFacets();return;}
+  const engb=e.target.closest("[data-eng]");if(engb){applyEng(engb.dataset.id,engb.dataset.eng);return;}
+  const scb=e.target.closest("[data-score]");if(scb){const host=scb.closest(".engage").querySelector("[data-eng]");setScore(host.dataset.id,+scb.dataset.score);return;}
+  const pa=e.target.closest("[data-pa]");if(pa){playAvail=pa.dataset.pa;gridShown=36;renderContent();renderFacets();return;}
+  if(e.target.closest("[data-sale]")){playSale=!playSale;gridShown=36;renderContent();renderFacets();return;}
+  const tg=e.target.closest("[data-tag]");if(tg){activeTag=tg.dataset.tag;activeView=null;closeDetail();gridShown=36;render();window.scrollTo({top:0,behavior:"smooth"});return;}
+  if(e.target.id==="clearTag"){activeTag=null;render();return;}
+  const ed=e.target.closest("[data-edit]");if(ed){openEditor(ed.dataset.edit);return;}
+  if(e.target.id==="closeDetail"||e.target===detail){closeDetail();return;}
+  if(e.target.id==="qaAdd"){quickAdd();return;}
+  if(e.target.id==="qaMore"){openEditor(null,document.getElementById("qaName").value.trim(),document.getElementById("qaCat").value);return;}
+  if(e.target.id==="exportBtn"){exportData();return;}
+  if(e.target.id==="resetBtn"){reallyReset();return;}
+  if(e.target.id==="saveBtn"){saveEntry();return;}
+  if(e.target.id==="cancelBtn"||e.target===editor){closeEditor();return;}
+  if(e.target.id==="deleteBtn"){const id=document.getElementById("f-id").value;items=items.filter(i=>i.id!==id);save();closeEditor();render();return;}
+  const gh=e.target.closest(".group-head");if(gh){gh.parentElement.classList.toggle("collapsed");return;}
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="showHandled"){showHandled=e.target.checked;gridShown=36;render();return;}
+  if(e.target.id==="f-cat"){syncExtra();return;}
+  if(e.target.id==="importFile"&&e.target.files[0]){importData(e.target.files[0]);return;}
+  if(e.target.id==="wG"){wGenre=e.target.value;gridShown=36;renderContent();return;}
+  if(e.target.id==="wA"){wAvail=e.target.value;gridShown=36;renderContent();return;}
+  if(e.target.classList.contains("check")){const it=items.find(i=>i.id===e.target.dataset.id);if(it){toggleDone(it,e.target.checked);save();renderContent();renderNav();}}
+});
+document.addEventListener("input",e=>{if(e.target.id==="wD"){wDir=e.target.value.trim().toLowerCase();gridShown=36;renderContent();}});
+document.getElementById("qaName").addEventListener("keydown",e=>{if(e.key==="Enter")quickAdd();});
+
+const search=document.getElementById("search");
+search.addEventListener("input",()=>{term=search.value.trim().toLowerCase();gridShown=36;renderContent();});
+document.addEventListener("keydown",e=>{
+  if(editor.classList.contains("open")||detail.classList.contains("open")){if(e.key==="Escape"){closeEditor();closeDetail();}return;}
+  if(e.key==="/"&&document.activeElement!==search){e.preventDefault();search.focus();}
+  if(e.key==="Escape"){if(search.value){search.value="";term="";renderContent();}search.blur();}
+});
+window.addEventListener("scroll",()=>{if(mode!=="grid"||activeView)return;
+  if(window.innerHeight+window.scrollY>=document.body.offsetHeight-400){const n=visibleSet().length;if(gridShown<n){gridShown+=24;renderContent();}}});
+
+const side=document.getElementById("side"),scrim=document.getElementById("scrim");
+function closeMenu(){side.classList.remove("open");scrim.classList.remove("show");document.body.style.overflow="";}
+document.getElementById("menuBtn").addEventListener("click",()=>{side.classList.add("open");scrim.classList.add("show");document.body.style.overflow="hidden";});
+scrim.addEventListener("click",closeMenu);
+
+document.getElementById("warnExport").addEventListener("click",exportData);
+try{const k="__tix_probe";localStorage.setItem(k,"1");localStorage.removeItem(k);}catch(e){flagNoStorage();}
+
+window.addEventListener("beforeunload",e=>{
+  if(!storageOK&&unsaved>0){e.preventDefault();e.returnValue="";return"";}
+});
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="hidden"&&!storageOK&&unsaved>0)paintWarn();
+});
+// reset the file input so the same backup can be re-imported twice in a row
+document.getElementById("importFile").addEventListener("click",function(){this.value="";});
+
+render();
+
+/* ---- PWA: register service worker for offline + install ---- */
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
